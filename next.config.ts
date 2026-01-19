@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
 
   // Image optimization
   images: {
+    // @ts-expect-error - Next.js types might not be up to date for this property
     unoptimized: true,
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
