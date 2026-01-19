@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Static Export for GitHub Pages
   output: "export",
+  basePath: "/kasi-ai-dashboard",
 
   // Image optimization
   images: {
