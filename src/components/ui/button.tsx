@@ -9,13 +9,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary/85 backdrop-blur-md border border-white/20 text-white shadow-lg shadow-blue-500/20 hover:bg-primary/95 hover:scale-[1.02] transition-all duration-300",
+        default: "relative overflow-hidden bg-primary/85 backdrop-blur-md border border-white/20 text-white shadow-lg shadow-blue-500/20 hover:bg-primary/95 hover:scale-[1.05] hover:shadow-blue-500/50 transition-all duration-300 after:absolute after:inset-0 after:z-0 after:bg-gradient-to-r after:from-transparent after:via-white/20 after:to-transparent after:-translate-x-full hover:after:translate-x-full hover:after:transition-transform hover:after:duration-700 after:content-['']",
         destructive:
           "bg-destructive/85 text-white backdrop-blur-md hover:bg-destructive/90 hover:scale-[1.02] focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
-          "border border-input/50 bg-white/40 backdrop-blur-md shadow-sm hover:bg-white/60 hover:text-accent-foreground hover:scale-[1.02] transition-all duration-300 dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "relative overflow-hidden border border-input/50 bg-white/40 backdrop-blur-md shadow-sm hover:bg-white/60 hover:text-accent-foreground hover:scale-[1.05] hover:shadow-lg transition-all duration-300 after:absolute after:inset-0 after:z-0 after:bg-gradient-to-r after:from-transparent after:via-white/30 after:to-transparent after:-translate-x-full hover:after:translate-x-full hover:after:transition-transform hover:after:duration-700 after:content-[''] dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         secondary:
-          "bg-secondary/80 backdrop-blur-md border border-white/20 text-secondary-foreground hover:bg-secondary/90 hover:scale-[1.02] transition-all duration-300",
+          "relative overflow-hidden bg-secondary/80 backdrop-blur-md border border-white/20 text-secondary-foreground hover:bg-secondary/90 hover:scale-[1.05] hover:shadow-lg transition-all duration-300 after:absolute after:inset-0 after:z-0 after:bg-gradient-to-r after:from-transparent after:via-white/20 after:to-transparent after:-translate-x-full hover:after:translate-x-full hover:after:transition-transform hover:after:duration-700 after:content-['']",
         ghost:
           "hover:bg-accent/50 hover:text-accent-foreground backdrop-blur-sm dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
