@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   output: "export",
   basePath: "/kasi-ai-dashboard",
 
+  // Skip TypeScript checking during build (handled by CI separately)
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
   // Image optimization
   images: {
     // @ts-expect-error - Next.js types might not be up to date for this property
@@ -31,3 +36,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+

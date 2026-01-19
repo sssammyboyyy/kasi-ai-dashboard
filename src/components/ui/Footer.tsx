@@ -17,8 +17,8 @@ export function Footer() {
                         <Link href="/pricing" className="hover:text-blue-600 transition-colors">Pricing</Link>
                         <Link href="/dashboard" className="hover:text-blue-600 transition-colors">Live Dashboard</Link>
                         <Link href="/get-started" className="text-purple-600 font-semibold hover:text-purple-700 transition-colors">🎁 Refer & Earn</Link>
-                        <Link href="#" className="hover:text-blue-600 transition-colors">Privacy</Link>
-                        <Link href="#" className="hover:text-blue-600 transition-colors">Terms</Link>
+                        <Link href="/privacy" className="hover:text-blue-600 transition-colors">Privacy</Link>
+                        <Link href="/terms" className="hover:text-blue-600 transition-colors">Terms</Link>
                     </div>
                 </div>
                 <div className="mt-8 text-center text-xs text-gray-400">
