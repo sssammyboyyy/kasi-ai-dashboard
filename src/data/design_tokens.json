@@ -1,0 +1,30 @@
+{
+    "colorPalette": {
+        "primary": "#2563EB",
+        "secondary": "#16A34A",
+        "background": "#FFFFFF",
+        "text": {
+            "heading": "#111827",
+            "body": "#374151"
+        }
+    },
+    "typography": {
+        "headings": {
+            "fontFamily": "Outfit, sans-serif",
+            "fontSize": "60px",
+            "fontWeight": "700"
+        },
+        "body": {
+            "fontFamily": "Inter, ui-sans-serif, system-ui, sans-serif",
+            "fontSize": "16px"
+        }
+    },
+    "spacing": {
+        "sectionPadding": "144px 0px 80px",
+        "containerMaxWidth": "1280px"
+    },
+    "borderRadius": {
+        "card": "12px",
+        "button": "6px"
+    }
+}
