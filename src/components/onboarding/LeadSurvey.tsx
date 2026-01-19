@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Logo } from "@/components/ui/Logo";
 import { ArrowRight, ArrowLeft, CheckCircle2, Sparkles, Target, Users, MapPin, Phone, Mail, Building } from "lucide-react";
+import { assetPath } from "@/lib/basePath";
 
 /**
  * CRO-Optimized Lead Generation Survey
@@ -72,7 +73,7 @@ const questions = [
         question: "What's your business name?",
         subtext: "This helps us personalize your leads package",
         type: "text",
-        image: "/icon_verified_shield.png",
+        image: assetPath("/icon_verified_shield.png"),
         icon: Building,
         placeholder: "e.g., CleanPro Services"
     },
@@ -82,7 +83,7 @@ const questions = [
         question: "And your name?",
         subtext: "So we know who to address",
         type: "text",
-        image: "/icon_contact_info.png",
+        image: assetPath("/icon_contact_info.png"),
         icon: Users,
         placeholder: "e.g., Thabo"
     },
@@ -92,7 +93,7 @@ const questions = [
         question: "What type of cleaning do you specialize in?",
         subtext: "We'll match you with businesses that need exactly this",
         type: "select",
-        image: "/icon_cleaning_services.png",
+        image: assetPath("/icon_cleaning_services.png"),
         icon: Sparkles,
         options: [
             "Commercial Office Cleaning",
@@ -112,7 +113,7 @@ const questions = [
         question: "How do you currently find new clients?",
         subtext: "We'll show you an easier way",
         type: "select",
-        image: "/icon_realtime_extraction.png",
+        image: assetPath("/icon_realtime_extraction.png"),
         icon: Target,
         options: [
             "Word of mouth only",
@@ -129,7 +130,7 @@ const questions = [
         question: "What's your biggest challenge right now?",
         subtext: "Be honest - we've heard it all",
         type: "select",
-        image: "/icon_growth_chart.png",
+        image: assetPath("/icon_growth_chart.png"),
         icon: Target,
         options: [
             "Finding new clients",
@@ -146,7 +147,7 @@ const questions = [
         question: "What could you afford to invest in leads monthly?",
         subtext: "We have plans from R399 - most clients see ROI in week 1",
         type: "select",
-        image: "/icon_finance_budget.png",
+        image: assetPath("/icon_finance_budget.png"),
         icon: Target,
         options: [
             "Less than R500/month",
@@ -164,7 +165,7 @@ const questions = [
         question: "How many new contracts would you like per month?",
         subtext: "Dream big - we'll help you get there",
         type: "select",
-        image: "/icon_growth_chart.png",
+        image: assetPath("/icon_growth_chart.png"),
         icon: Sparkles,
         options: [
             "1-2 new contracts",
@@ -180,7 +181,7 @@ const questions = [
         question: "Who's your ideal client?",
         subtext: "We'll target exactly these businesses for you",
         type: "select",
-        image: "/icon_cleaning_services.png",
+        image: assetPath("/icon_cleaning_services.png"),
         icon: Building,
         options: [
             "Small offices (1-20 employees)",
@@ -197,7 +198,7 @@ const questions = [
         question: "Where do you service?",
         subtext: "We'll only send leads in your area",
         type: "text",
-        image: "/icon_realtime_extraction.png",
+        image: assetPath("/icon_realtime_extraction.png"),
         icon: MapPin,
         placeholder: "e.g., Johannesburg, Sandton, Midrand"
     },
@@ -209,7 +210,7 @@ const questions = [
         question: "What's your WhatsApp number?",
         subtext: "We'll send your first 25 FREE leads here instantly",
         type: "tel",
-        image: "/icon_whatsapp_scripts.png",
+        image: assetPath("/icon_whatsapp_scripts.png"),
         icon: Phone,
         placeholder: "+27 82 555 1234"
     },
@@ -219,7 +220,7 @@ const questions = [
         question: "And your best email?",
         subtext: "For your lead reports and dashboard access",
         type: "email",
-        image: "/icon_contact_info.png",
+        image: assetPath("/icon_contact_info.png"),
         icon: Mail,
         placeholder: "you@yourbusiness.co.za"
     },
@@ -229,7 +230,7 @@ const questions = [
         question: "How do you prefer we contact you?",
         subtext: "We respect your time",
         type: "select",
-        image: "/icon_contact_info.png",
+        image: assetPath("/icon_contact_info.png"),
         icon: Phone,
         options: [
             "WhatsApp (recommended)",
@@ -246,7 +247,7 @@ const questions = [
         question: "When do you want to start getting leads?",
         subtext: "We can have you set up in 24 hours",
         type: "select",
-        image: "/icon_calendar_clock.png",
+        image: assetPath("/icon_calendar_clock.png"),
         icon: Target,
         options: [
             "Immediately - I need clients now",
@@ -261,7 +262,7 @@ const questions = [
         question: "How did you hear about Kasi AI?",
         subtext: "Helps us know what's working",
         type: "select",
-        image: "/icon_whatsapp_scripts.png",
+        image: assetPath("/icon_whatsapp_scripts.png"),
         icon: Users,
         options: [
             "Google search",
@@ -277,7 +278,7 @@ const questions = [
         question: "Are you ready to get your first 25 FREE leads?",
         subtext: "No card required - just click below and we'll send them",
         type: "select",
-        image: "/icon_verified_shield.png",
+        image: assetPath("/icon_verified_shield.png"),
         icon: CheckCircle2,
         options: [
             "Yes! Send me my free leads now",
@@ -380,7 +381,7 @@ export function LeadSurvey() {
                         <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 text-white">
                             <div className="flex items-center gap-3">
                                 <div className="h-12 w-12 rounded-xl bg-white/20 p-2 backdrop-blur-sm">
-                                    <Image src="/icon_referral_gift.png" alt="Gift" width={48} height={48} className="h-full w-full object-contain" />
+                                    <Image src={assetPath("/icon_referral_gift.png")} alt="Gift" width={48} height={48} className="h-full w-full object-contain" />
                                 </div>
                                 <div className="text-left">
                                     <p className="font-bold text-sm uppercase tracking-wide opacity-90">Bonus Offer</p>

@@ -25,6 +25,7 @@ import {
 import { Hero3D } from "@/components/marketing/Hero3D";
 import { TrustMarquee } from "@/components/marketing/TrustMarquee";
 import { motion } from "framer-motion";
+import { assetPath } from "@/lib/basePath";
 
 // FAQ data for schema markup and potential FAQ section
 const FAQ_ITEMS = [
@@ -38,7 +39,7 @@ const TESTIMONIALS = [
   {
     name: "Thabo Molefe",
     role: "CEO at CleanPro Vaal",
-    image: "/kasi_hero_professional_1768835124101.png",
+    image: assetPath("/kasi_hero_professional_1768835124101.png"),
     quote: "I closed 3 new contracts in my first week. The leads are verified and ready to buy.",
     stat: "R45,000",
     statLabel: "new revenue"
@@ -46,7 +47,7 @@ const TESTIMONIALS = [
   {
     name: "Naledi Dlamini",
     role: "Founder, Sparkle Solutions",
-    image: "/kasi_hero_woman_1768835238793.png",
+    image: assetPath("/kasi_hero_woman_1768835238793.png"),
     quote: "No more cold calling. These leads already know they need my services.",
     stat: "12",
     statLabel: "new clients"
@@ -54,7 +55,7 @@ const TESTIMONIALS = [
   {
     name: "Sipho Nkosi",
     role: "Operations Manager",
-    image: "/kasi_hero_man_2_1768835329601.png",
+    image: assetPath("/kasi_hero_man_2_1768835329601.png"),
     quote: "The WhatsApp scripts save me hours. I just send and they respond.",
     stat: "85%",
     statLabel: "response rate"
@@ -70,22 +71,22 @@ const PAIN_POINTS = [
 
 const FEATURES = [
   {
-    image: "/icon_realtime_extraction.png",
+    image: assetPath("/icon_realtime_extraction.png"),
     title: "Real-Time Extraction",
     description: "We scrape Google Maps and business directories in your area. Every lead is fresh, verified, and ready."
   },
   {
-    image: "/icon_contact_info.png",
+    image: assetPath("/icon_contact_info.png"),
     title: "Email + Phone Included",
     description: "No more hunting for contact info. Get direct emails and phone numbers delivered to your inbox."
   },
   {
-    image: "/icon_whatsapp_scripts.png",
+    image: assetPath("/icon_whatsapp_scripts.png"),
     title: "WhatsApp Scripts Ready",
     description: "Every lead comes with a personalized outreach script. Just copy, paste, and send."
   },
   {
-    image: "/icon_verified_shield.png",
+    image: assetPath("/icon_verified_shield.png"),
     title: "Verified Decision Makers",
     description: "We filter out gatekeepers. You get direct access to the people who sign the cheques."
   }

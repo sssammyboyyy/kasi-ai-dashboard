@@ -2,6 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { assetPath } from "@/lib/basePath";
 
 interface LogoProps {
     className?: string;
@@ -12,7 +13,7 @@ export function Logo({ className, variant = "default" }: LogoProps) {
     return (
         <Link href="/" className="inline-block transition-transform hover:scale-105">
             <Image
-                src="/logo.png"
+                src={assetPath("/logo.png")}
                 alt="Kasi AI"
                 width={240}
                 height={80}

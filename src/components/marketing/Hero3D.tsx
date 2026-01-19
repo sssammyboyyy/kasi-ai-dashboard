@@ -4,6 +4,7 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { assetPath } from "@/lib/basePath";
 
 export function Hero3D() {
     const ref = useRef<HTMLDivElement>(null);
@@ -112,7 +113,7 @@ export function Hero3D() {
                                 <div className="flex gap-4">
                                     <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-blue-100 shadow-lg">
                                         {/* Using the distinguished black SA male professional image */}
-                                        <img src="/kasi_hero_professional_1768835124101.png" alt="Decision Maker" className="h-full w-full object-cover" />
+                                        <img src={assetPath("/kasi_hero_professional_1768835124101.png")} alt="Decision Maker" className="h-full w-full object-cover" />
                                         <div className="absolute bottom-0 right-0 h-5 w-5 rounded-full border-2 border-white bg-green-500" />
                                     </div>
                                     <div>

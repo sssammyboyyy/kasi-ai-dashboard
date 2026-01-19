@@ -10,6 +10,7 @@ import { ScrollReveal } from "@/components/shared/ScrollReveal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { assetPath } from "@/lib/basePath";
 import {
     Activity,
     Users,
@@ -59,7 +60,7 @@ export default function DashboardPage() {
             <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white/80 backdrop-blur-md">
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
                     <Link href="/" className="flex items-center gap-2">
-                        <Image src="/logo.png" alt="Kasi AI" width={180} height={60} className="h-10 w-auto" />
+                        <Image src={assetPath("/logo.png")} alt="Kasi AI" width={180} height={60} className="h-10 w-auto" />
                     </Link>
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
@@ -138,9 +139,9 @@ export default function DashboardPage() {
                                             className="flex items-start gap-3 px-4 py-3"
                                         >
                                             <div className={`mt-1 h-2 w-2 rounded-full ${log.includes("SUCCESS") ? "bg-green-500" :
-                                                    log.includes("EXTRACT") ? "bg-blue-500" :
-                                                        log.includes("ENRICH") ? "bg-purple-500" :
-                                                            "bg-gray-400"
+                                                log.includes("EXTRACT") ? "bg-blue-500" :
+                                                    log.includes("ENRICH") ? "bg-purple-500" :
+                                                        "bg-gray-400"
                                                 }`} />
                                             <div className="flex-1">
                                                 <p className="text-sm text-gray-700">{log}</p>
@@ -185,8 +186,8 @@ export default function DashboardPage() {
                                                     <p className="text-sm text-gray-500">{lead.niche} • {lead.location}</p>
                                                 </div>
                                                 <Badge className={`${lead.leadScore >= 90 ? "bg-green-100 text-green-700" :
-                                                        lead.leadScore >= 80 ? "bg-blue-100 text-blue-700" :
-                                                            "bg-gray-100 text-gray-700"
+                                                    lead.leadScore >= 80 ? "bg-blue-100 text-blue-700" :
+                                                        "bg-gray-100 text-gray-700"
                                                     }`}>
                                                     {lead.leadScore}%
                                                 </Badge>

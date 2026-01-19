@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { JsonLd, schemas } from "@/components/seo/JsonLd";
 import { ChevronDown, ChevronUp, Gift } from "lucide-react";
 import { motion } from "framer-motion";
+import { assetPath } from "@/lib/basePath";
 
 export default function PricingPage() {
     const [yearly, setYearly] = useState(true);
@@ -82,7 +83,7 @@ export default function PricingPage() {
             <nav className="border-b border-gray-200 bg-white/80 backdrop-blur-md">
                 <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
                     <Link href="/" className="flex items-center gap-2">
-                        <Image src="/logo.png" alt="Kasi AI" width={180} height={60} className="h-10 w-auto hover:opacity-80 transition-opacity" />
+                        <Image src={assetPath("/logo.png")} alt="Kasi AI" width={180} height={60} className="h-10 w-auto hover:opacity-80 transition-opacity" />
                     </Link>
                     <div className="hidden items-center gap-8 md:flex">
                         <Link href="/" className="text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors">Back to Home</Link>
@@ -105,7 +106,7 @@ export default function PricingPage() {
                         <div className="flex -space-x-3 hover:space-x-0 transition-all duration-300">
                             {[1, 2, 3].map(i => (
                                 <div key={i} className="h-12 w-12 rounded-full border-2 border-white bg-gray-200 shadow-md transition-transform hover:scale-110 hover:z-10">
-                                    <Image src={`/pricing_profile_${i}.png`} alt="User" width={48} height={48} className="h-full w-full rounded-full object-cover" />
+                                    <Image src={assetPath(`/pricing_profile_${i}.png`)} alt="User" width={48} height={48} className="h-full w-full rounded-full object-cover" />
                                 </div>
                             ))}
                         </div>
@@ -203,7 +204,7 @@ export default function PricingPage() {
                                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                             >
                                 <Image
-                                    src="/icon_referral_gift.png"
+                                    src={assetPath("/icon_referral_gift.png")}
                                     alt="Gift"
                                     width={80}
                                     height={80}
