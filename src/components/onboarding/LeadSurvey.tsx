@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
 import { Logo } from "@/components/ui/Logo";
-import { ArrowRight, ArrowLeft, CheckCircle2, Sparkles, Target, Users, MapPin, Phone, Mail, Building } from "lucide-react";
+import { ArrowRight, ArrowLeft, CheckCircle2, Sparkles, Target, Users, MapPin, Phone, Mail, Building, MessageCircle, Star } from "lucide-react";
 import { assetPath } from "@/lib/basePath";
+import { analytics } from "@/components/analytics/GoogleAnalytics";
+import { config } from "@/lib/config";
 
 /**
  * CRO-Optimized Lead Generation Survey
@@ -301,9 +303,62 @@ export function LeadSurvey() {
     const [showBreak, setShowBreak] = useState(false);
     const [breakContent, setBreakContent] = useState({ title: "", message: "" });
     const [isComplete, setIsComplete] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [npsScore, setNpsScore] = useState<number | null>(null);
+    const [npsSubmitted, setNpsSubmitted] = useState(false);
 
     const question = questions[currentQuestion];
     const progress = ((currentQuestion + 1) / questions.length) * 100;
+
+    // Submit form data to Formspree
+    const submitForm = async (formData: SurveyData) => {
+        setIsSubmitting(true);
+        try {
+            const response = await fetch(config.formspree.getEndpoint(), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...formData,
+                    submittedAt: new Date().toISOString(),
+                    source: 'lead_survey'
+                }),
+            });
+            if (response.ok) {
+                analytics.surveyCompleted(formData.businessName);
+            }
+        } catch (error) {
+            console.error('Form submission error:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Submit NPS score
+    const submitNps = async (score: number) => {
+        setNpsScore(score);
+        setNpsSubmitted(true);
+        analytics.npsSubmitted(score);
+        try {
+            await fetch(config.formspree.getEndpoint(), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    npsScore: score,
+                    businessName: data.businessName,
+                    email: data.email,
+                    type: 'nps_feedback'
+                }),
+            });
+        } catch (error) {
+            console.error('NPS submission error:', error);
+        }
+    };
+
+    // Generate WhatsApp deeplink
+    const getWhatsAppLink = () => {
+        const message = `Hi! I just signed up for Kasi AI.\n\nBusiness: ${data.businessName}\nName: ${data.yourName}\nLocation: ${data.location}\n\nI'm ready for my 25 free leads!`;
+        return config.whatsapp.getLink(message);
+    };
 
     const handleNext = () => {
         const breakPoint = sectionBreaks.find(b => b.afterQuestion === currentQuestion);
@@ -316,7 +371,10 @@ export function LeadSurvey() {
         setShowBreak(false);
         if (currentQuestion < questions.length - 1) {
             setCurrentQuestion(currentQuestion + 1);
+            analytics.surveyStep(currentQuestion + 1, question.id);
         } else {
+            // Submit form on completion
+            submitForm(data);
             setIsComplete(true);
         }
     };
@@ -362,21 +420,72 @@ export function LeadSurvey() {
                     <p className="mt-4 text-base text-gray-600">
                         Your first 25 FREE leads are being prepared for {data.businessName}.
                     </p>
-                    <p className="mt-2 text-sm text-gray-500">
-                        Expect a text at {data.whatsappNumber} within 30 minutes.
-                    </p>
-                    <Link href="/">
-                        <Button className="mt-6 w-full h-12 bg-green-600 font-bold hover:bg-green-700">
-                            Go to Home Page
+
+                    {/* WhatsApp CTA - MAIN ACTION */}
+                    <a
+                        href={getWhatsAppLink()}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block mt-6"
+                    >
+                        <Button className="w-full h-14 bg-green-600 font-bold text-lg hover:bg-green-700 gap-2">
+                            <MessageCircle className="h-5 w-5" />
+                            Get Leads on WhatsApp Now
                         </Button>
-                    </Link>
+                    </a>
+                    <p className="mt-2 text-xs text-gray-400">
+                        Click to message us directly and receive your leads instantly
+                    </p>
+
+                    {/* NPS Feedback Widget */}
+                    {!npsSubmitted ? (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
+                            className="mt-8 p-5 rounded-2xl bg-white shadow-lg border border-gray-100"
+                        >
+                            <p className="text-sm font-medium text-gray-700 mb-3">
+                                Quick feedback: How likely are you to recommend Kasi AI?
+                            </p>
+                            <div className="flex justify-center gap-1">
+                                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
+                                    <button
+                                        key={score}
+                                        onClick={() => submitNps(score)}
+                                        className={`w-8 h-8 rounded-full text-xs font-bold transition-all hover:scale-110 ${score <= 6 ? 'bg-red-100 text-red-600 hover:bg-red-200' :
+                                                score <= 8 ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200' :
+                                                    'bg-green-100 text-green-600 hover:bg-green-200'
+                                            }`}
+                                    >
+                                        {score}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex justify-between text-[10px] text-gray-400 mt-1 px-1">
+                                <span>Not likely</span>
+                                <span>Very likely</span>
+                            </div>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="mt-8 p-4 rounded-xl bg-green-50 border border-green-200"
+                        >
+                            <div className="flex items-center justify-center gap-2 text-green-700">
+                                <Star className="h-5 w-5 fill-green-500" />
+                                <span className="font-medium">Thanks for your feedback!</span>
+                            </div>
+                        </motion.div>
+                    )}
 
                     {/* Viral Referral Card */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5 }}
-                        className="mt-8 overflow-hidden rounded-2xl bg-white shadow-xl border border-blue-100"
+                        className="mt-6 overflow-hidden rounded-2xl bg-white shadow-xl border border-blue-100"
                     >
                         <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 text-white">
                             <div className="flex items-center gap-3">
@@ -403,6 +512,12 @@ export function LeadSurvey() {
                             </div>
                         </div>
                     </motion.div>
+
+                    <Link href="/" className="block mt-4">
+                        <Button variant="ghost" className="text-gray-500 hover:text-gray-700">
+                            Go to Home Page
+                        </Button>
+                    </Link>
                 </motion.div>
             </div>
         );

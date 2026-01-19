@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import { JsonLd, schemas } from "@/components/seo/JsonLd";
 import { SkipLink } from "@/components/ui/SkipLink";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -105,6 +106,7 @@ export default function RootLayout({
         <JsonLd data={schemas.website} />
       </head>
       <body className={`${inter.variable} ${jetbrainsMono.variable} ${outfit.variable} font-sans antialiased`}>
+        <GoogleAnalytics />
         <SkipLink />
         <div id="main-content">
           {children}
@@ -113,3 +115,4 @@ export default function RootLayout({
     </html>
   );
 }
+
