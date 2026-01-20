@@ -1,6 +1,7 @@
-// Base path for GitHub Pages deployment
-// This must match the basePath in next.config.ts
-export const BASE_PATH = process.env.NODE_ENV === 'production' ? '/kasi-ai-dashboard' : '';
+// Base path configuration
+// For Vercel deployment: no prefix needed (served from root)
+// For GitHub Pages: would be '/kasi-ai-dashboard'
+export const BASE_PATH = '';
 
 // Helper function to prefix asset paths
 export function assetPath(path: string): string {
@@ -8,3 +9,4 @@ export function assetPath(path: string): string {
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     return `${BASE_PATH}${normalizedPath}`;
 }
+
