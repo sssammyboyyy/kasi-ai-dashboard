@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
 import { Logo } from "@/components/ui/Logo";
-import { ArrowRight, ArrowLeft, CheckCircle2, Sparkles, Target, Users, MapPin, Phone, Mail, Building, MessageCircle, Star, Copy, Check } from "lucide-react";
+import { ArrowRight, ArrowLeft, CheckCircle2, Sparkles, Target, Users, MapPin, Phone, Mail, Building, MessageCircle, Star, Copy, Check, Info, DollarSign, Briefcase, Factory, Home, Megaphone, TrendingUp, Calendar, Globe } from "lucide-react";
 import { assetPath } from "@/lib/basePath";
 import { analytics } from "@/components/analytics/GoogleAnalytics";
 import { config } from "@/lib/config";
+import { supabase } from "@/lib/supabaseClient";
 
 /**
  * CRO-Optimized Lead Generation Survey
@@ -75,7 +76,6 @@ const questions = [
         question: "What's your business name?",
         subtext: "This helps us personalize your leads package",
         type: "text",
-        image: assetPath("/icon_verified_shield.png"),
         icon: Building,
         placeholder: "e.g., CleanPro Services"
     },
@@ -85,7 +85,6 @@ const questions = [
         question: "And your name?",
         subtext: "So we know who to address",
         type: "text",
-        image: assetPath("/icon_contact_info.png"),
         icon: Users,
         placeholder: "e.g., Thabo"
     },
@@ -95,7 +94,6 @@ const questions = [
         question: "What type of cleaning do you specialize in?",
         subtext: "We'll match you with businesses that need exactly this",
         type: "select",
-        image: assetPath("/icon_cleaning_services.png"),
         icon: Sparkles,
         options: [
             "Commercial Office Cleaning",
@@ -115,8 +113,7 @@ const questions = [
         question: "How do you currently find new clients?",
         subtext: "We'll show you an easier way",
         type: "select",
-        image: assetPath("/icon_realtime_extraction.png"),
-        icon: Target,
+        icon: Globe,
         options: [
             "Word of mouth only",
             "Facebook/Social Media Ads",
@@ -132,7 +129,6 @@ const questions = [
         question: "What's your biggest challenge right now?",
         subtext: "Be honest - we've heard it all",
         type: "select",
-        image: assetPath("/icon_growth_chart.png"),
         icon: Target,
         options: [
             "Finding new clients",
@@ -149,8 +145,7 @@ const questions = [
         question: "What could you afford to invest in leads monthly?",
         subtext: "We have plans from R399 - most clients see ROI in week 1",
         type: "select",
-        image: assetPath("/icon_finance_budget.png"),
-        icon: Target,
+        icon: DollarSign,
         options: [
             "Less than R500/month",
             "R500 - R1,000/month",
@@ -167,8 +162,7 @@ const questions = [
         question: "How many new contracts would you like per month?",
         subtext: "Dream big - we'll help you get there",
         type: "select",
-        image: assetPath("/icon_growth_chart.png"),
-        icon: Sparkles,
+        icon: TrendingUp,
         options: [
             "1-2 new contracts",
             "3-5 new contracts",
@@ -183,8 +177,7 @@ const questions = [
         question: "Who's your ideal client?",
         subtext: "We'll target exactly these businesses for you",
         type: "select",
-        image: assetPath("/icon_cleaning_services.png"),
-        icon: Building,
+        icon: Factory,
         options: [
             "Small offices (1-20 employees)",
             "Medium offices (20-100 employees)",
@@ -200,7 +193,6 @@ const questions = [
         question: "Where do you service?",
         subtext: "We'll only send leads in your area",
         type: "text",
-        image: assetPath("/icon_realtime_extraction.png"),
         icon: MapPin,
         placeholder: "e.g., Johannesburg, Sandton, Midrand"
     },
@@ -212,8 +204,7 @@ const questions = [
         question: "What's your WhatsApp number?",
         subtext: "We'll send your first 25 FREE leads here instantly",
         type: "tel",
-        image: assetPath("/icon_whatsapp_scripts.png"),
-        icon: Phone,
+        icon: MessageCircle,
         placeholder: "+27 82 555 1234"
     },
     {
@@ -222,7 +213,6 @@ const questions = [
         question: "And your best email?",
         subtext: "For your lead reports and dashboard access",
         type: "email",
-        image: assetPath("/icon_contact_info.png"),
         icon: Mail,
         placeholder: "you@yourbusiness.co.za"
     },
@@ -232,7 +222,6 @@ const questions = [
         question: "How do you prefer we contact you?",
         subtext: "We respect your time",
         type: "select",
-        image: assetPath("/icon_contact_info.png"),
         icon: Phone,
         options: [
             "WhatsApp (recommended)",
@@ -249,8 +238,7 @@ const questions = [
         question: "When do you want to start getting leads?",
         subtext: "We can have you set up in 24 hours",
         type: "select",
-        image: assetPath("/icon_calendar_clock.png"),
-        icon: Target,
+        icon: Calendar,
         options: [
             "Immediately - I need clients now",
             "This week",
@@ -264,8 +252,7 @@ const questions = [
         question: "How did you hear about Kasi AI?",
         subtext: "Helps us know what's working",
         type: "select",
-        image: assetPath("/icon_whatsapp_scripts.png"),
-        icon: Users,
+        icon: Megaphone,
         options: [
             "Google search",
             "Facebook/Instagram",
@@ -280,7 +267,6 @@ const questions = [
         question: "Are you ready to get your first 25 FREE leads?",
         subtext: "No card required - just click below and we'll send them",
         type: "select",
-        image: assetPath("/icon_verified_shield.png"),
         icon: CheckCircle2,
         options: [
             "Yes! Send me my free leads now",
@@ -310,16 +296,56 @@ export function LeadSurvey() {
     const question = questions[currentQuestion];
     const progress = ((currentQuestion + 1) / questions.length) * 100;
 
-    // Submit form data to Formspree
+    // Submit form data to Formspree and Supabase
     const submitForm = async (formData: SurveyData) => {
         setIsSubmitting(true);
+        const timestamp = new Date().toISOString();
+
+        // 1. Submit to Supabase (Priority)
+        try {
+            const { error } = await supabase
+                .from('leads')
+                .insert([
+                    {
+                        full_name: formData.yourName,
+                        email: formData.email,
+                        venue_name: formData.businessName,
+                        pain_point: formData.biggestChallenge,
+                        notes: JSON.stringify({
+                            business_type: formData.businessType,
+                            lead_source: formData.currentLeadSource,
+                            monthly_budget: formData.monthlyBudget,
+                            contracts_goal: formData.monthlyContractsGoal,
+                            ideal_client: formData.idealClientType,
+                            location: formData.location,
+                            whatsapp_number: formData.whatsappNumber,
+                            preferred_contact: formData.preferredContact,
+                            timeline: formData.timeline,
+                            referral_source: formData.heardAboutUs,
+                            ready_to_start: formData.readyToStart
+                        }),
+                        status: 'new'
+                    }
+                ]);
+
+            if (error) {
+                console.error('Supabase submission error:', error);
+                // Fallback handled by Formspree below
+            } else {
+                console.log('Supabase submission successful');
+            }
+        } catch (err) {
+            console.error('Supabase unexpected error:', err);
+        }
+
+        // 2. Submit to Formspree (Backup & Notification)
         try {
             const response = await fetch(config.formspree.getEndpoint(), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...formData,
-                    submittedAt: new Date().toISOString(),
+                    submittedAt: timestamp,
                     source: 'lead_survey'
                 }),
             });
@@ -581,25 +607,13 @@ export function LeadSurvey() {
                             className="w-full max-w-xl"
                         >
                             <div className="mb-8 flex justify-center">
-                                {question.image ? (
-                                    <motion.div
-                                        animate={{ y: [0, -5, 0] }}
-                                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                                        className="h-24 w-24 drop-shadow-xl"
-                                    >
-                                        <Image
-                                            src={question.image}
-                                            alt={question.question}
-                                            width={96}
-                                            height={96}
-                                            className="h-full w-full object-contain"
-                                        />
-                                    </motion.div>
-                                ) : (
-                                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100">
-                                        <question.icon className="h-8 w-8 text-blue-600" />
-                                    </div>
-                                )}
+                                <motion.div
+                                    animate={{ y: [0, -5, 0] }}
+                                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                                    className="rounded-full bg-blue-50 p-6 ring-1 ring-blue-100"
+                                >
+                                    <question.icon className="h-10 w-10 text-blue-600" />
+                                </motion.div>
                             </div>
 
                             <h2 className="text-center font-outfit text-3xl font-bold text-gray-900 md:text-4xl">
@@ -614,12 +628,17 @@ export function LeadSurvey() {
                                             <button
                                                 key={option}
                                                 onClick={() => handleInputChange(option)}
-                                                className={`w-full rounded-xl border-2 p-4 text-left font-medium transition-all ${data[question.id as keyof SurveyData] === option
-                                                    ? "border-blue-600 bg-blue-50 text-blue-700"
+                                                className={`group w-full rounded-xl border-2 p-4 text-left font-medium transition-all ${data[question.id as keyof SurveyData] === option
+                                                    ? "border-blue-600 bg-blue-50 text-blue-700 shadow-sm"
                                                     : "border-gray-200 bg-white text-gray-700 hover:border-blue-200 hover:bg-blue-50/50"
                                                     }`}
                                             >
-                                                {option}
+                                                <div className="flex items-center justify-between">
+                                                    <span>{option}</span>
+                                                    {data[question.id as keyof SurveyData] === option && (
+                                                        <Check className="h-5 w-5 text-blue-600" />
+                                                    )}
+                                                </div>
                                             </button>
                                         ))}
                                     </div>
