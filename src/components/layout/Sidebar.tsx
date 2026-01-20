@@ -41,6 +41,7 @@ const navItems: NavItem[] = [
     { label: "Campaigns", href: "/dashboard/campaigns", icon: Megaphone },
     { label: "Messages", href: "/dashboard/messages", icon: MessageSquare },
     { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+    { label: "Team", href: "/dashboard/team", icon: Building2 },
     { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
