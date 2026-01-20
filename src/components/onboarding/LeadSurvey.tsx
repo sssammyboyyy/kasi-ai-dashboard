@@ -621,20 +621,23 @@ export function LeadSurvey() {
                         >
                             <div className="mb-8 flex justify-center">
                                 <motion.div
-                                    animate={{ y: [0, -5, 0] }}
-                                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                                    className="rounded-full bg-blue-50 p-6 ring-1 ring-blue-100"
+                                    animate={{ y: [0, -8, 0] }}
+                                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                                    className={question.customIcon
+                                        ? "drop-shadow-xl"
+                                        : "rounded-full bg-gradient-to-br from-blue-50 to-purple-50 p-6 ring-1 ring-blue-100/50 shadow-lg"
+                                    }
                                 >
                                     {question.customIcon ? (
                                         <Image
                                             src={assetPath(question.customIcon)}
                                             alt={question.question}
-                                            width={80}
-                                            height={80}
-                                            className="h-20 w-20 object-contain"
+                                            width={120}
+                                            height={120}
+                                            className="h-28 w-28 object-contain drop-shadow-md"
                                         />
                                     ) : (
-                                        <question.icon className="h-10 w-10 text-blue-600" />
+                                        <question.icon className="h-12 w-12 text-blue-600" />
                                     )}
                                 </motion.div>
                             </div>
