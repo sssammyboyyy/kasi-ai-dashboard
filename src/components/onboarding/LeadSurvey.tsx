@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
 import { Logo } from "@/components/ui/Logo";
-import { ArrowRight, ArrowLeft, CheckCircle2, Sparkles, Target, Users, MapPin, Phone, Mail, Building, MessageCircle, Star } from "lucide-react";
+import { ArrowRight, ArrowLeft, CheckCircle2, Sparkles, Target, Users, MapPin, Phone, Mail, Building, MessageCircle, Star, Copy, Check } from "lucide-react";
 import { assetPath } from "@/lib/basePath";
 import { analytics } from "@/components/analytics/GoogleAnalytics";
 import { config } from "@/lib/config";
@@ -454,8 +454,8 @@ export function LeadSurvey() {
                                         key={score}
                                         onClick={() => submitNps(score)}
                                         className={`w-8 h-8 rounded-full text-xs font-bold transition-all hover:scale-110 ${score <= 6 ? 'bg-red-100 text-red-600 hover:bg-red-200' :
-                                                score <= 8 ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200' :
-                                                    'bg-green-100 text-green-600 hover:bg-green-200'
+                                            score <= 8 ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200' :
+                                                'bg-green-100 text-green-600 hover:bg-green-200'
                                             }`}
                                     >
                                         {score}
@@ -506,8 +506,20 @@ export function LeadSurvey() {
                                 <div className="flex-1 rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-500 truncate select-all">
                                     kasi.ai/ref/{data.yourName.toLowerCase().replace(/\s/g, '')}
                                 </div>
-                                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                                    Copy
+                                <Button
+                                    size="sm"
+                                    className="bg-blue-600 hover:bg-blue-700 gap-1"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(`https://kasi.ai/ref/${data.yourName.toLowerCase().replace(/\s/g, '')}`);
+                                        const btn = document.getElementById('copy-btn');
+                                        if (btn) {
+                                            btn.textContent = 'Copied!';
+                                            setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+                                        }
+                                    }}
+                                >
+                                    <Copy className="h-3 w-3" />
+                                    <span id="copy-btn">Copy</span>
                                 </Button>
                             </div>
                         </div>
