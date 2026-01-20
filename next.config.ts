@@ -1,10 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Static Export for GitHub Pages
-  output: "export",
-  basePath: "/kasi-ai-dashboard",
-
   // Skip TypeScript checking during build (handled by CI separately)
   typescript: {
     ignoreBuildErrors: true,
@@ -12,8 +8,6 @@ const nextConfig: NextConfig = {
 
   // Image optimization
   images: {
-    // @ts-expect-error - Next.js types might not be up to date for this property
-    unoptimized: true,
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
@@ -21,9 +15,7 @@ const nextConfig: NextConfig = {
   },
 
   // Performance optimizations
-  experimental: {
-    // optimizeCss: true, // Disabled due to CSP eval issues in dev mode
-  },
+  experimental: {},
 
   // Compression
   compress: true,
