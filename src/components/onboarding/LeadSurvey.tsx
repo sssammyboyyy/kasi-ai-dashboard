@@ -77,6 +77,7 @@ const questions = [
         subtext: "This helps us personalize your leads package",
         type: "text",
         icon: Building,
+        customIcon: "/icon_contact_info.png",
         placeholder: "e.g., CleanPro Services"
     },
     {
@@ -86,6 +87,7 @@ const questions = [
         subtext: "So we know who to address",
         type: "text",
         icon: Users,
+        customIcon: "/icon_verified_shield.png",
         placeholder: "e.g., Thabo"
     },
     {
@@ -95,6 +97,7 @@ const questions = [
         subtext: "We'll match you with businesses that need exactly this",
         type: "select",
         icon: Sparkles,
+        customIcon: "/icon_cleaning_services.png",
         options: [
             "Commercial Office Cleaning",
             "Industrial Cleaning",
@@ -612,7 +615,17 @@ export function LeadSurvey() {
                                     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                                     className="rounded-full bg-blue-50 p-6 ring-1 ring-blue-100"
                                 >
-                                    <question.icon className="h-10 w-10 text-blue-600" />
+                                    {question.customIcon ? (
+                                        <Image
+                                            src={assetPath(question.customIcon)}
+                                            alt={question.question}
+                                            width={40}
+                                            height={40}
+                                            className="h-10 w-10 object-contain"
+                                        />
+                                    ) : (
+                                        <question.icon className="h-10 w-10 text-blue-600" />
+                                    )}
                                 </motion.div>
                             </div>
 
