@@ -1,12 +1,10 @@
--- Kasi AI Lead Delivery Schema - ROBUST VERSION
--- Run this migration in Supabase SQL Editor
+-- FINAL FIX SCHEMA
+-- Run this in Supabase SQL Editor
+-- This uses native Postgres syntax to safely add columns without complex blocks
 
--- 1. EXTENSIONS
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- 2. TABLES & COLUMNS (Defensive Checks)
-
--- Organizations Table
+-- 1. Create Organizations (if not exists)
 CREATE TABLE IF NOT EXISTS public.organizations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
@@ -16,34 +14,20 @@ CREATE TABLE IF NOT EXISTS public.organizations (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Profiles Table (Handle existing table case)
+-- 2. Create Profiles (if not exists)
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- FORCE ADD COLUMNS to Profiles if they don't exist
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'org_id') THEN
-        ALTER TABLE public.profiles ADD COLUMN org_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'full_name') THEN
-        ALTER TABLE public.profiles ADD COLUMN full_name TEXT;
-    END IF;
+-- 3. Safely Add Columns to Profiles (Native Postgres)
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS org_id UUID REFERENCES public.organizations(id) ON DELETE SET NULL;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS full_name TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member', 'viewer'));
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'role') THEN
-        ALTER TABLE public.profiles ADD COLUMN role TEXT DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member', 'viewer'));
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'avatar_url') THEN
-        ALTER TABLE public.profiles ADD COLUMN avatar_url TEXT;
-    END IF;
-END $$;
-
--- Leads Table
+-- 4. Create Leads (if not exists)
 CREATE TABLE IF NOT EXISTS public.leads (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     org_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE,
@@ -64,7 +48,7 @@ CREATE TABLE IF NOT EXISTS public.leads (
     converted_at TIMESTAMPTZ
 );
 
--- Campaigns Table
+-- 5. Create Campaigns (if not exists)
 CREATE TABLE IF NOT EXISTS public.campaigns (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     org_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE,
@@ -82,7 +66,7 @@ CREATE TABLE IF NOT EXISTS public.campaigns (
     completed_at TIMESTAMPTZ
 );
 
--- Notifications Table
+-- 6. Create Notifications (if not exists)
 CREATE TABLE IF NOT EXISTS public.notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lead_id UUID REFERENCES public.leads(id) ON DELETE CASCADE,
@@ -95,7 +79,7 @@ CREATE TABLE IF NOT EXISTS public.notifications (
     delivered_at TIMESTAMPTZ
 );
 
--- 3. INDEXES (Safe Create)
+-- 7. Indexes
 CREATE INDEX IF NOT EXISTS idx_profiles_org_id ON public.profiles(org_id);
 CREATE INDEX IF NOT EXISTS idx_leads_org_status ON public.leads(org_id, status);
 CREATE INDEX IF NOT EXISTS idx_leads_score ON public.leads(score DESC);
@@ -103,25 +87,22 @@ CREATE INDEX IF NOT EXISTS idx_leads_created ON public.leads(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_lead ON public.notifications(lead_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_status ON public.notifications(status);
 
--- 4. RLS (Drop existing to reset, then create)
-
+-- 8. Policies
 ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.campaigns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
--- Drop obsolete policies to avoid conflicts
+-- Drop old to reset
 DROP POLICY IF EXISTS "Users can view their organization" ON public.organizations;
 DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Users can view their org leads" ON public.leads;
 DROP POLICY IF EXISTS "Users can insert leads for their org" ON public.leads;
 DROP POLICY IF EXISTS "Users can update their org leads" ON public.leads;
-DROP POLICY IF EXISTS "Users can manage their org campaigns" ON public.campaigns;
-DROP POLICY IF EXISTS "Users can view their lead notifications" ON public.notifications;
 
--- Re-create Policies
+-- Re-create
 CREATE POLICY "Users can view their organization" ON public.organizations
     FOR SELECT TO authenticated
     USING ( id IN (SELECT org_id FROM public.profiles WHERE id = (SELECT auth.uid())) );
@@ -143,53 +124,7 @@ CREATE POLICY "Users can insert leads for their org" ON public.leads
     FOR INSERT TO authenticated
     WITH CHECK ( org_id IN (SELECT org_id FROM public.profiles WHERE id = (SELECT auth.uid())) );
 
--- 5. FUNCTIONS & TRIGGERS
-
--- Auto-update updated_at
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Helper: Get Lead Stats
-CREATE OR REPLACE FUNCTION get_lead_stats(org_uuid UUID)
-RETURNS JSON AS $$
-DECLARE
-    result JSON;
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND org_id = org_uuid) THEN
-        RAISE EXCEPTION 'Access denied';
-    END IF;
-
-    SELECT json_build_object(
-        'total', COUNT(*),
-        'new', COUNT(*) FILTER (WHERE status = 'new'),
-        'today', COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE)
-    ) INTO result
-    FROM public.leads
-    WHERE org_id = org_uuid;
-    
-    RETURN result;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-REVOKE EXECUTE ON FUNCTION get_lead_stats(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION get_lead_stats(uuid) TO authenticated;
-
--- Public Function: Handle New User Signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO public.profiles (id, full_name, avatar_url)
-    VALUES (
-        NEW.id, 
-        COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', ''),
-        NEW.raw_user_meta_data->>'avatar_url'
-    )
-    ON CONFLICT (id) DO NOTHING;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- 9. Seed Data
+INSERT INTO public.organizations (id, name, slug, plan)
+VALUES ('00000000-0000-0000-0000-000000000001', 'Demo Company', 'demo', 'pro')
+ON CONFLICT (id) DO NOTHING;

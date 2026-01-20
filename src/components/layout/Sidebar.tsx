@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, ElementType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { createClient } from "@/utils/supabase/client";
 import {
     LayoutDashboard,
     Users,
@@ -24,7 +25,7 @@ import { Logo } from "@/components/ui/Logo";
 interface NavItem {
     label: string;
     href: string;
-    icon: React.ElementType;
+    icon: ElementType;
     badge?: number;
 }
 
@@ -36,12 +37,18 @@ interface Organization {
 
 const navItems: NavItem[] = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Leads", href: "/dashboard/leads", icon: Users, badge: 12 },
+    { label: "Leads", href: "/dashboard/leads", icon: Users },
     { label: "Campaigns", href: "/dashboard/campaigns", icon: Megaphone },
-    { label: "Messages", href: "/dashboard/messages", icon: MessageSquare, badge: 3 },
+    { label: "Messages", href: "/dashboard/messages", icon: MessageSquare },
     { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
     { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
+
+interface UserProfile {
+    full_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+}
 
 const organizations: Organization[] = [
     { id: "1", name: "CleanPro Services" },
@@ -52,7 +59,67 @@ export function Sidebar() {
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
     const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
-    const [currentOrg, setCurrentOrg] = useState(organizations[0]);
+    const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
+    const [organizations, setOrganizations] = useState<Organization[]>([]);
+    const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [leadsCount, setLeadsCount] = useState<number>(0);
+    const supabase = createClient();
+
+    useEffect(() => {
+        const loadSidebarData = async () => {
+            // 1. Get Session & Profile
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                const { data: profileData } = await supabase
+                    .from('profiles')
+                    .select('full_name, avatar_url')
+                    .eq('id', session.user.id)
+                    .single();
+
+                setProfile({
+                    full_name: profileData?.full_name || 'User',
+                    email: session.user.email || null,
+                    avatar_url: profileData?.avatar_url || null
+                });
+            }
+
+            // 2. Get Organizations
+            const { data: orgsData } = await supabase
+                .from('organizations')
+                .select('id, name');
+
+            if (orgsData && orgsData.length > 0) {
+                const mappedOrgs = orgsData.map(o => ({ id: o.id, name: o.name }));
+                setOrganizations(mappedOrgs);
+                setCurrentOrg(mappedOrgs[0]);
+            }
+
+            // 3. Get Leads Count
+            const { count } = await supabase
+                .from('leads')
+                .select('*', { count: 'exact', head: true });
+
+            setLeadsCount(count || 0);
+        };
+
+        loadSidebarData();
+
+        // Realtime leads count update
+        const countChannel = supabase
+            .channel('sidebar-count')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'leads' },
+                () => {
+                    setLeadsCount(prev => prev + 1);
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(countChannel);
+        };
+    }, [supabase]);
 
     return (
         <motion.aside
@@ -105,12 +172,12 @@ export function Sidebar() {
                     )}
                 >
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 font-bold text-white">
-                        {currentOrg.name.charAt(0)}
+                        {currentOrg?.name?.charAt(0) || 'K'}
                     </div>
                     {!collapsed && (
                         <>
                             <div className="flex-1 text-left">
-                                <p className="text-sm font-semibold text-gray-900">{currentOrg.name}</p>
+                                <p className="text-sm font-semibold text-gray-900">{currentOrg?.name || 'Loading...'}</p>
                                 <p className="text-xs text-gray-500">Pro Plan</p>
                             </div>
                             <ChevronDown className={cn("h-4 w-4 text-gray-400 transition-transform", orgDropdownOpen && "rotate-180")} />
@@ -136,7 +203,7 @@ export function Sidebar() {
                                     }}
                                     className={cn(
                                         "flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-gray-50",
-                                        org.id === currentOrg.id && "bg-blue-50"
+                                        org.id === currentOrg?.id && "bg-blue-50"
                                     )}
                                 >
                                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-200 text-sm font-bold text-gray-600">
@@ -178,12 +245,12 @@ export function Sidebar() {
                                     {!collapsed && (
                                         <>
                                             <span className="flex-1">{item.label}</span>
-                                            {item.badge && (
+                                            {item.label === "Leads" && leadsCount > 0 && (
                                                 <span className={cn(
                                                     "flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-xs font-bold",
                                                     isActive ? "bg-white/20 text-white" : "bg-blue-100 text-blue-600"
                                                 )}>
-                                                    {item.badge}
+                                                    {leadsCount}
                                                 </span>
                                             )}
                                         </>
@@ -224,13 +291,17 @@ export function Sidebar() {
                     "flex items-center gap-3 rounded-xl bg-gray-50 p-3",
                     collapsed && "justify-center"
                 )}>
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-emerald-600 font-bold text-white">
-                        S
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-emerald-600 font-bold text-white overflow-hidden">
+                        {profile?.avatar_url ? (
+                            <img src={profile.avatar_url} alt={profile.full_name || ''} className="h-full w-full object-cover" />
+                        ) : (
+                            profile?.full_name?.charAt(0) || 'S'
+                        )}
                     </div>
                     {!collapsed && (
                         <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-900">Sam</p>
-                            <p className="text-xs text-gray-500">sam@example.com</p>
+                            <p className="text-sm font-semibold text-gray-900">{profile?.full_name || 'Sam'}</p>
+                            <p className="text-xs text-gray-500 truncate w-32">{profile?.email || 'sam@example.com'}</p>
                         </div>
                     )}
                     {!collapsed && (

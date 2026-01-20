@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { MOCK_LEADS, LOG_STREAM, Lead } from "@/data/mock-leads";
+import { createClient } from "@/utils/supabase/client";
+import { LOG_STREAM } from "@/data/mock-leads";
 import { Footer } from "@/components/ui/Footer";
 import { ScrollReveal } from "@/components/shared/ScrollReveal";
 import { Button } from "@/components/ui/button";
@@ -25,34 +26,66 @@ import {
 } from "lucide-react";
 
 export default function DashboardPage() {
-    const [leads, setLeads] = useState<Lead[]>([]);
+    const [leads, setLeads] = useState<any[]>([]);
     const [logs, setLogs] = useState<string[]>([]);
+    const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
         leadsToday: 0,
         responseRate: 87,
         activeCampaigns: 3,
     });
+    const supabase = createClient();
 
     useEffect(() => {
-        // Simulate incoming leads
-        const leadInterval = setInterval(() => {
-            const randomLead = MOCK_LEADS[Math.floor(Math.random() * MOCK_LEADS.length)];
-            setLeads((prev) => [{ ...randomLead, id: Date.now().toString() }, ...prev].slice(0, 8));
-            setStats((prev) => ({ ...prev, leadsToday: prev.leadsToday + 1 }));
-        }, 4000);
+        const fetchData = async () => {
+            // Get today's count
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
 
-        // Simulate log stream
+            const { count: todayCount } = await supabase
+                .from('leads')
+                .select('*', { count: 'exact', head: true })
+                .gte('created_at', today.toISOString());
+
+            // Get recent leads
+            const { data: recentLeads } = await supabase
+                .from('leads')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(8);
+
+            if (recentLeads) setLeads(recentLeads);
+            if (todayCount !== null) setStats(prev => ({ ...prev, leadsToday: todayCount }));
+            setLoading(false);
+        };
+
+        fetchData();
+
+        // Realtime logs simulation (for now)
         let logIndex = 0;
         const logInterval = setInterval(() => {
             setLogs((prev) => [LOG_STREAM[logIndex % LOG_STREAM.length], ...prev].slice(0, 15));
             logIndex++;
-        }, 1200);
+        }, 3000);
+
+        // Realtime leads subscription
+        const channel = supabase
+            .channel('dashboard-updates')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'leads' },
+                (payload) => {
+                    setLeads(prev => [payload.new, ...prev].slice(0, 8));
+                    setStats(prev => ({ ...prev, leadsToday: prev.leadsToday + 1 }));
+                }
+            )
+            .subscribe();
 
         return () => {
-            clearInterval(leadInterval);
             clearInterval(logInterval);
+            supabase.removeChannel(channel);
         };
-    }, []);
+    }, [supabase]);
 
     return (
         <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white font-sans">
@@ -182,14 +215,14 @@ export default function DashboardPage() {
                                         <Card className="border-gray-200 p-5 transition-all hover:border-blue-200 hover:shadow-md">
                                             <div className="mb-3 flex items-start justify-between">
                                                 <div>
-                                                    <h3 className="font-semibold text-gray-900">{lead.businessName}</h3>
-                                                    <p className="text-sm text-gray-500">{lead.niche} • {lead.location}</p>
+                                                    <h3 className="font-semibold text-gray-900">{lead.business_name}</h3>
+                                                    <p className="text-sm text-gray-500">{lead.niche} • {lead.address}</p>
                                                 </div>
-                                                <Badge className={`${lead.leadScore >= 90 ? "bg-green-100 text-green-700" :
-                                                    lead.leadScore >= 80 ? "bg-blue-100 text-blue-700" :
+                                                <Badge className={`${lead.score >= 90 ? "bg-green-100 text-green-700" :
+                                                    lead.score >= 80 ? "bg-blue-100 text-blue-700" :
                                                         "bg-gray-100 text-gray-700"
                                                     }`}>
-                                                    {lead.leadScore}%
+                                                    {lead.score}%
                                                 </Badge>
                                             </div>
 

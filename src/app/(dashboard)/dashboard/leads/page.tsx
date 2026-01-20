@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { createClient } from "@/utils/supabase/client";
 import {
     Search,
     Filter,
@@ -22,62 +23,24 @@ import { Button } from "@/components/ui/button";
 interface Lead {
     id: string;
     business_name: string;
-    contact_name: string;
-    phone: string;
-    email: string;
-    address: string;
+    contact_name: string | null;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
     score: number;
     status: "new" | "contacted" | "qualified" | "converted" | "lost";
     created_at: string;
+    website?: string;
+    source?: string;
 }
 
+
 // Demo data
-const demoLeads: Lead[] = [
-    {
-        id: "1",
-        business_name: "Sandton Office Complex",
-        contact_name: "Thabo Molefe",
-        phone: "+27 82 555 1234",
-        email: "thabo@sandtonoffice.co.za",
-        address: "123 Sandton Drive, Sandton",
-        score: 92,
-        status: "new",
-        created_at: "2024-01-20T10:30:00Z"
-    },
-    {
-        id: "2",
-        business_name: "Apex Industrial Park",
-        contact_name: "Sizwe Ndlovu",
-        phone: "+27 83 444 5678",
-        email: "sizwe@apexindustrial.co.za",
-        address: "45 Industry Road, Midrand",
-        score: 78,
-        status: "contacted",
-        created_at: "2024-01-20T09:15:00Z"
-    },
-    {
-        id: "3",
-        business_name: "Rosebank Mall Services",
-        contact_name: "Nomsa Dlamini",
-        phone: "+27 84 333 9012",
-        email: "nomsa@rosebankservices.co.za",
-        address: "Rosebank Mall, Johannesburg",
-        score: 85,
-        status: "qualified",
-        created_at: "2024-01-19T16:45:00Z"
-    },
-    {
-        id: "4",
-        business_name: "Pretoria Tech Hub",
-        contact_name: "James van der Berg",
-        phone: "+27 82 222 3456",
-        email: "james@pretoriatech.co.za",
-        address: "Innovation Drive, Pretoria",
-        score: 95,
-        status: "converted",
-        created_at: "2024-01-19T14:20:00Z"
-    },
-];
+// Status match function to safely handle DB string types
+const getLeadStatus = (status: string): Lead["status"] => {
+    const validStatuses = ["new", "contacted", "qualified", "converted", "lost"];
+    return validStatuses.includes(status) ? (status as Lead["status"]) : "new";
+};
 
 const statusConfig = {
     new: { label: "New", color: "bg-blue-100 text-blue-700", icon: Star },
@@ -88,12 +51,66 @@ const statusConfig = {
 };
 
 export default function LeadsPage() {
-    const [leads] = useState<Lead[]>(demoLeads);
+    const [leads, setLeads] = useState<Lead[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
+    const supabase = createClient();
+
+    useEffect(() => {
+        const fetchLeads = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from("leads")
+                    .select("*")
+                    .order("created_at", { ascending: false });
+
+                if (error) {
+                    console.error("Error fetching leads:", error);
+                    return;
+                }
+
+                if (data) {
+                    console.log("DEBUG: Leads fetched from Supabase:", data);
+                    const mappedLeads: Lead[] = data.map((l) => ({
+                        ...l,
+                        status: getLeadStatus(l.status),
+                    }));
+                    setLeads(mappedLeads);
+                }
+
+            } catch (err) {
+                console.error("Unexpected error:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchLeads();
+
+        // Optional: Realtime subscription
+        const channel = supabase
+            .channel('leads-changes')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'leads' },
+                (payload) => {
+                    const newLead = payload.new as any;
+                    setLeads((current) => [{
+                        ...newLead,
+                        status: getLeadStatus(newLead.status)
+                    } as Lead, ...current]);
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [supabase]);
 
     const filteredLeads = leads.filter(lead =>
-        lead.business_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.contact_name.toLowerCase().includes(searchQuery.toLowerCase())
+        lead.business_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.contact_name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const stats = {
@@ -108,9 +125,16 @@ export default function LeadsPage() {
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="font-outfit text-3xl font-bold text-gray-900">Leads</h1>
-                    <p className="text-gray-500">Manage and track your business leads</p>
+                    <div className="flex items-center gap-3">
+                        <h1 className="font-outfit text-3xl font-bold text-gray-900">Leads</h1>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold text-green-700 uppercase">
+                            <div className="h-1 w-1 rounded-full bg-green-500 animate-pulse" />
+                            Live Supabase
+                        </span>
+                    </div>
+                    <p className="text-gray-500">Manage and track your business leads from your real database</p>
                 </div>
+
                 <div className="flex gap-3">
                     <Button variant="outline" className="gap-2">
                         <Download className="h-4 w-4" />
@@ -139,9 +163,13 @@ export default function LeadsPage() {
                         className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100"
                     >
                         <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-                        <p className={`mt-2 bg-gradient-to-r ${stat.color} bg-clip-text text-4xl font-bold text-transparent`}>
-                            {stat.value}
-                        </p>
+                        {loading ? (
+                            <div className="mt-2 h-10 w-24 animate-pulse rounded-lg bg-gray-100" />
+                        ) : (
+                            <p className={`mt-2 bg-gradient-to-r ${stat.color} bg-clip-text text-4xl font-bold text-transparent`}>
+                                {stat.value}
+                            </p>
+                        )}
                     </motion.div>
                 ))}
             </div>
@@ -178,65 +206,79 @@ export default function LeadsPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {filteredLeads.map((lead, i) => {
-                                const StatusIcon = statusConfig[lead.status].icon;
-                                return (
-                                    <motion.tr
-                                        key={lead.id}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ delay: i * 0.05 }}
-                                        className="group transition-colors hover:bg-gray-50"
-                                    >
-                                        <td className="px-6 py-4">
-                                            <div>
-                                                <p className="font-semibold text-gray-900">{lead.business_name}</p>
-                                                <p className="mt-1 flex items-center gap-1 text-sm text-gray-500">
-                                                    <MapPin className="h-3 w-3" />
-                                                    {lead.address}
-                                                </p>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <p className="font-medium text-gray-900">{lead.contact_name}</p>
-                                            <p className="mt-1 text-sm text-gray-500">{lead.phone}</p>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="h-2 w-16 overflow-hidden rounded-full bg-gray-200">
-                                                    <div
-                                                        className="h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-500"
-                                                        style={{ width: `${lead.score}%` }}
-                                                    />
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={5} className="py-12 text-center text-gray-500">
+                                        Loading leads...
+                                    </td>
+                                </tr>
+                            ) : filteredLeads.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="py-12 text-center text-gray-500">
+                                        No leads found
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredLeads.map((lead, i) => {
+                                    const StatusIcon = statusConfig[lead.status].icon;
+                                    return (
+                                        <motion.tr
+                                            key={lead.id}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: i * 0.05 }}
+                                            className="group transition-colors hover:bg-gray-50"
+                                        >
+                                            <td className="px-6 py-4">
+                                                <div>
+                                                    <p className="font-semibold text-gray-900">{lead.business_name}</p>
+                                                    <p className="mt-1 flex items-center gap-1 text-sm text-gray-500">
+                                                        <MapPin className="h-3 w-3" />
+                                                        {lead.address}
+                                                    </p>
                                                 </div>
-                                                <span className="text-sm font-bold text-gray-700">{lead.score}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${statusConfig[lead.status].color}`}>
-                                                <StatusIcon className="h-3 w-3" />
-                                                {statusConfig[lead.status].label}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <button className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-green-50 hover:text-green-600">
-                                                    <Phone className="h-4 w-4" />
-                                                </button>
-                                                <button className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
-                                                    <Mail className="h-4 w-4" />
-                                                </button>
-                                                <button className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-green-50 hover:text-green-600">
-                                                    <MessageSquare className="h-4 w-4" />
-                                                </button>
-                                                <button className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </motion.tr>
-                                );
-                            })}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <p className="font-medium text-gray-900">{lead.contact_name}</p>
+                                                <p className="mt-1 text-sm text-gray-500">{lead.phone}</p>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="h-2 w-16 overflow-hidden rounded-full bg-gray-200">
+                                                        <div
+                                                            className="h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-500"
+                                                            style={{ width: `${lead.score}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-sm font-bold text-gray-700">{lead.score}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${statusConfig[lead.status].color}`}>
+                                                    <StatusIcon className="h-3 w-3" />
+                                                    {statusConfig[lead.status].label}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-2">
+                                                    <button className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-green-50 hover:text-green-600">
+                                                        <Phone className="h-4 w-4" />
+                                                    </button>
+                                                    <button className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                                                        <Mail className="h-4 w-4" />
+                                                    </button>
+                                                    <button className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-green-50 hover:text-green-600">
+                                                        <MessageSquare className="h-4 w-4" />
+                                                    </button>
+                                                    <button className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </motion.tr>
+                                    );
+                                })
+                            )}
                         </tbody>
                     </table>
                 </div>

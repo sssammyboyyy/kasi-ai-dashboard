@@ -10,7 +10,8 @@ import { ArrowRight, ArrowLeft, CheckCircle2, Sparkles, Target, Users, MapPin, P
 import { assetPath } from "@/lib/basePath";
 import { analytics } from "@/components/analytics/GoogleAnalytics";
 import { config } from "@/lib/config";
-import { supabase } from "@/lib/supabaseClient";
+
+import { createClient } from "@/utils/supabase/client";
 
 /**
  * CRO-Optimized Lead Generation Survey
@@ -308,6 +309,7 @@ export function LeadSurvey() {
 
     const question = questions[currentQuestion];
     const progress = ((currentQuestion + 1) / questions.length) * 100;
+    const supabase = createClient();
 
     // Submit form data to Formspree and Supabase
     const submitForm = async (formData: SurveyData) => {
