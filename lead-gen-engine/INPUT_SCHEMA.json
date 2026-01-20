@@ -1,0 +1,243 @@
+{
+    "title": "Lead Generation Suite",
+    "description": "All-in-one lead generation: Scrape → Enrich → Qualify → Scripts/Emails. Works standalone or enriches leads from Fast Scraper.",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "mode": {
+            "title": "Mode",
+            "type": "string",
+            "description": "Select which pipeline stage(s) to run",
+            "enum": [
+                "full_pipeline",
+                "scrape_only",
+                "enrich_only",
+                "enrich_from_fast_scraper",
+                "qualify_only",
+                "apex_predator"
+            ],
+            "enumTitles": [
+                "Full Pipeline (Scrape → Enrich → Qualify)",
+                "Scrape Only (Google Maps)",
+                "Enrich Only (Your Domains)",
+                "Enrich from Fast Scraper (A→B Pipeline)",
+                "Qualify Only (Your Leads)",
+                "🦖 Apex Predator (God Mode)"
+            ],
+            "default": "full_pipeline",
+            "prefill": "full_pipeline",
+            "sectionCaption": "Pipeline Settings",
+            "sectionDescription": "Choose your pipeline mode and search parameters"
+        },
+        "searchQuery": {
+            "title": "Search Query",
+            "type": "string",
+            "description": "Business type to search for (e.g., 'golf simulator', 'escape room', 'yoga studio')",
+            "editor": "textfield",
+            "prefill": "golf simulator"
+        },
+        "locations": {
+            "title": "Locations",
+            "type": "array",
+            "description": "Cities/regions to search (e.g., 'Miami, FL', 'London, UK')",
+            "editor": "stringList",
+            "prefill": [
+                "Miami, FL"
+            ]
+        },
+        "maxResultsPerLocation": {
+            "title": "Max Results Per Location",
+            "type": "integer",
+            "description": "Maximum leads to scrape per location",
+            "default": 50,
+            "minimum": 1,
+            "maximum": 500
+        },
+        "domains": {
+            "title": "Domains (enrich_only mode)",
+            "type": "array",
+            "description": "Domains to enrich. Only used in enrich_only mode.",
+            "editor": "stringList"
+        },
+        "leads": {
+            "title": "Leads JSON (qualify_only mode)",
+            "type": "array",
+            "description": "Pre-existing leads to qualify. Only used in qualify_only mode.",
+            "editor": "json"
+        },
+        "enrichmentMethods": {
+            "title": "Enrichment Methods",
+            "type": "array",
+            "description": "Email discovery methods to use",
+            "editor": "select",
+            "items": {
+                "type": "string",
+                "enum": [
+                    "website",
+                    "pattern",
+                    "whois",
+                    "social",
+                    "dns",
+                    "dork",
+                    "wayback"
+                ]
+            },
+            "default": [
+                "website",
+                "pattern",
+                "dns",
+                "dork"
+            ],
+            "sectionCaption": "Enrichment Settings",
+            "sectionDescription": "Configure email discovery and verification"
+        },
+        "customEmailPrefixes": {
+            "title": "Custom Email Prefixes",
+            "type": "array",
+            "description": "Email prefixes to try (e.g., 'info', 'bookings', 'reservations')",
+            "editor": "stringList",
+            "default": [
+                "info",
+                "hello",
+                "contact",
+                "sales",
+                "support",
+                "bookings",
+                "enquiries"
+            ]
+        },
+        "verifyEmails": {
+            "title": "Verify Emails",
+            "type": "boolean",
+            "description": "SMTP verification of discovered emails",
+            "default": true
+        },
+        "findDecisionMaker": {
+            "title": "Find Decision Maker",
+            "type": "boolean",
+            "description": "Attempt to find owner/manager name from website",
+            "default": true
+        },
+        "scoringWeights": {
+            "title": "Scoring Weights",
+            "type": "object",
+            "description": "Customize lead scoring weights (0-100 total)",
+            "editor": "json",
+            "default": {
+                "hasWebsite": 15,
+                "hasEmail": 25,
+                "hasPhone": 10,
+                "noBookingSystem": 20,
+                "highRating": 10,
+                "hasDecisionMaker": 10,
+                "hasReviews": 5
+            },
+            "sectionCaption": "Scoring & Qualification",
+            "sectionDescription": "Configure how leads are scored and filtered"
+        },
+        "minScoreThreshold": {
+            "title": "Minimum Score Threshold",
+            "type": "integer",
+            "description": "Only output leads with score >= this value (0 = no filter)",
+            "default": 0,
+            "minimum": 0,
+            "maximum": 100
+        },
+        "generateCallScripts": {
+            "title": "Generate Call Scripts",
+            "type": "boolean",
+            "description": "Create personalized gatekeeper bypass call scripts",
+            "default": true,
+            "sectionCaption": "Outreach Templates",
+            "sectionDescription": "Configure call scripts and email templates"
+        },
+        "generateEmailTemplates": {
+            "title": "Generate Email Templates",
+            "type": "boolean",
+            "description": "Create personalized cold email sequences",
+            "default": true
+        },
+        "customCallScripts": {
+            "title": "Custom Call Scripts",
+            "type": "object",
+            "description": "Override default scripts. Use {{businessName}}, {{city}}, {{businessType}}, {{rating}}",
+            "editor": "json",
+            "default": {
+                "openerPrimary": "Hi — who's the best person to speak to about {{businessType}}?",
+                "openerCallback": "Hi — I'm following up on a call earlier regarding {{businessName}}.",
+                "icebreaker": "{{businessName}} looks like a great spot in {{city}}!",
+                "valueHook": "We help {{businessType}} businesses automate bookings and fill empty slots.",
+                "close": "Would it make sense to show you how it works? Takes about 10 minutes."
+            }
+        },
+        "customEmailTemplates": {
+            "title": "Custom Email Templates",
+            "type": "object",
+            "description": "Override default email copy. Use {{businessName}}, {{firstName}}, {{city}}, {{businessType}}",
+            "editor": "json",
+            "default": {
+                "subject1": "Quick question about {{businessName}}",
+                "subject2": "{{city}} {{businessType}} - booking idea",
+                "body1": "Hi {{firstName}},\n\nI noticed {{businessName}} in {{city}} and wanted to reach out.\n\nWe help {{businessType}} businesses automate bookings and fill empty time slots without changing how you operate.\n\nWould it make sense to show you how it works?\n\nBest,\n[Your Name]",
+                "followUp": "Hi {{firstName}},\n\nJust following up on my last note about {{businessName}}.\n\nHappy to share a quick demo if helpful.\n\nBest,\n[Your Name]"
+            }
+        },
+        "outputFormat": {
+            "title": "Output Format",
+            "type": "string",
+            "description": "How to format the output",
+            "enum": [
+                "json",
+                "csv",
+                "manyreach"
+            ],
+            "default": "json",
+            "sectionCaption": "Output & Integration",
+            "sectionDescription": "Configure output format and integrations"
+        },
+        "outputFilters": {
+            "title": "Output Filters",
+            "type": "object",
+            "description": "Filter which leads are included in output",
+            "editor": "json",
+            "default": {
+                "onlyWithEmail": false,
+                "onlyWithPhone": false,
+                "excludeCategories": []
+            }
+        },
+        "webhookUrl": {
+            "title": "Webhook URL",
+            "type": "string",
+            "description": "Send leads to this URL (Zapier, Make, n8n, etc.)",
+            "editor": "textfield"
+        },
+        "webhookBatchSize": {
+            "title": "Webhook Batch Size",
+            "type": "integer",
+            "description": "How many leads to send per webhook call",
+            "default": 10,
+            "minimum": 1,
+            "maximum": 100
+        },
+        "maxConcurrency": {
+            "title": "Max Concurrency",
+            "type": "integer",
+            "description": "How many leads to process in parallel",
+            "default": 3,
+            "minimum": 1,
+            "maximum": 10
+        },
+        "feedbackWebhook": {
+            "title": "Feedback Webhook (Optional)",
+            "type": "string",
+            "description": "Receive run metrics and errors for continuous improvement. POST payload includes success/failure, lead counts, and timing.",
+            "editor": "textfield",
+            "sectionCaption": "Analytics",
+            "sectionDescription": "Optional: Track run performance and errors"
+        }
+    },
+    "required": [
+        "mode"
+    ]
+}

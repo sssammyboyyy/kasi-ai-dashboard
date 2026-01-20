@@ -1,0 +1,93 @@
+{
+  "mode": "full_pipeline",
+  "maxResultsPerLocation": 100,
+  "enrichmentMethods": [
+    "website",
+    "pattern",
+    "dns",
+    "dork"
+  ],
+  "customEmailPrefixes": [
+    "info",
+    "hello",
+    "contact",
+    "sales",
+    "support",
+    "bookings",
+    "enquiries"
+  ],
+  "verifyEmails": true,
+  "findDecisionMaker": true,
+  "scoringWeights": {
+    "hasEmail": 30,
+    "hasPhone": 20,
+    "hasWebsite": 15,
+    "hasDecisionMaker": 25,
+    "emailVerified": 10
+  },
+  "minScoreThreshold": 40,
+  "generateCallScripts": true,
+  "generateEmailTemplates": true,
+  "customCallScripts": {
+    "opener": "Hi {firstName}, I'm calling about facilities management at {businessName}. Do you currently outsource your cleaning?",
+    "valueProposition": "We help companies like {businessName} reduce cleaning costs by 20-30% while improving quality. Can I ask who handles your cleaning contracts?",
+    "close": "I'd love to send you a quote. What's the best email to reach you?"
+  },
+  "customEmailTemplates": {
+    "subject": "Quick question about cleaning at {businessName}",
+    "body": "Hi {firstName},\n\nI noticed {businessName} is a growing business in {location}. Many companies your size are overpaying for cleaning services.\n\nWe specialize in commercial cleaning and help businesses save 20-30% on costs while improving quality.\n\nWould you be open to a 5-minute call?\n\nBest,\nKasi AI Lead Gen"
+  },
+  "outputFormat": "json",
+  "outputFilters": {
+    "onlyWithEmail": false,
+    "onlyWithPhone": false
+  },
+  "webhookBatchSize": 10,
+  "maxConcurrency": 5,
+  "searchQuery": "commercial cleaning services",
+  "locations": [
+    "Johannesburg CBD, Gauteng",
+    "Sandton, Gauteng",
+    "Rosebank, Gauteng",
+    "Midrand, Gauteng",
+    "Randburg, Gauteng",
+    "Centurion, Gauteng",
+    "Pretoria CBD, Gauteng",
+    "Hatfield, Pretoria",
+    "Menlyn, Pretoria",
+    "Roodepoort, Gauteng",
+    "Boksburg, Gauteng",
+    "Benoni, Gauteng",
+    "Kempton Park, Gauteng",
+    "Germiston, Gauteng",
+    "Alberton, Gauteng",
+    "Vanderbijlpark, Gauteng",
+    "Vereeniging, Gauteng",
+    "Springs, Gauteng",
+    "Edenvale, Gauteng",
+    "Fourways, Gauteng",
+    "Bryanston, Gauteng",
+    "Sunninghill, Gauteng",
+    "Woodmead, Gauteng",
+    "Cape Town CBD, Western Cape",
+    "Bellville, Western Cape",
+    "Stellenbosch, Western Cape",
+    "Paarl, Western Cape",
+    "Century City, Western Cape",
+    "Claremont, Cape Town",
+    "Sea Point, Cape Town",
+    "Durban CBD, KwaZulu-Natal",
+    "Umhlanga, KwaZulu-Natal",
+    "Pietermaritzburg, KwaZulu-Natal",
+    "Ballito, KwaZulu-Natal",
+    "Pinetown, KwaZulu-Natal",
+    "Port Elizabeth, Eastern Cape",
+    "East London, Eastern Cape",
+    "Bloemfontein, Free State",
+    "Kimberley, Northern Cape",
+    "Polokwane, Limpopo",
+    "Nelspruit, Mpumalanga",
+    "Rustenburg, North West",
+    "Potchefstroom, North West"
+  ]
+}

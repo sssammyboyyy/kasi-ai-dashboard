@@ -1,0 +1,34 @@
+{
+    "name": "apify-lead-gen-suite",
+    "version": "1.0.0",
+    "description": "All-in-one lead generation suite: Scrape → Enrich → Qualify → Scripts",
+    "type": "module",
+    "main": "src/main.js",
+    "scripts": {
+        "start": "node src/main.js",
+        "test": "node --test"
+    },
+    "keywords": [
+        "apify",
+        "lead-generation",
+        "email-finder",
+        "google-maps-scraper",
+        "b2b-leads",
+        "sales-automation"
+    ],
+    "author": "Venue Engine",
+    "license": "MIT",
+    "dependencies": {
+        "@googlemaps/google-maps-services-js": "^3.4.2",
+        "@supabase/supabase-js": "^2.90.1",
+        "apify": "^3.1.0",
+        "axios": "^1.6.0",
+        "cheerio": "^1.0.0-rc.12",
+        "playwright": "^1.40.0",
+        "playwright-extra": "^4.3.6",
+        "puppeteer-extra-plugin-stealth": "^2.11.2"
+    },
+    "engines": {
+        "node": ">=18"
+    }
+}

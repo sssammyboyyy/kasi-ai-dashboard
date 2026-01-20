@@ -1,0 +1,14 @@
+{
+    "name": "lead-gen-suite",
+    "version": "1.0.0",
+    "title": "Lead Generation Suite - All-in-One",
+    "description": "Scrape Google Maps → Find Emails → Qualify Leads → Generate Call Scripts. One actor, full pipeline.",
+    "isPublic": true,
+    "isDeprecated": false,
+    "isAnonymouslyRunnable": false,
+    "defaultRunOptions": {
+        "build": "latest",
+        "memoryMbytes": 4096,
+        "timeoutSecs": 3600
+    }
+}

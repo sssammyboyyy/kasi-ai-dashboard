@@ -1,0 +1,37 @@
+{
+    "mode": "full_pipeline",
+    "searchQuery": "industrial cleaning services",
+    "locations": [
+        "Johannesburg, Gauteng",
+        "Pretoria, Gauteng",
+        "Durban, KwaZulu-Natal",
+        "Cape Town, Western Cape",
+        "Port Elizabeth, Eastern Cape",
+        "Boksburg, Gauteng",
+        "Germiston, Gauteng",
+        "Vanderbijlpark, Gauteng",
+        "Richards Bay, KwaZulu-Natal",
+        "Secunda, Mpumalanga"
+    ],
+    "maxResultsPerLocation": 100,
+    "enrichmentMethods": [
+        "website",
+        "pattern",
+        "dns",
+        "dork"
+    ],
+    "verifyEmails": true,
+    "findDecisionMaker": true,
+    "scoringWeights": {
+        "hasEmail": 30,
+        "hasPhone": 20,
+        "hasWebsite": 15,
+        "hasDecisionMaker": 25,
+        "emailVerified": 10
+    },
+    "minScoreThreshold": 40,
+    "generateCallScripts": true,
+    "generateEmailTemplates": true,
+    "outputFormat": "json",
+    "maxConcurrency": 5
+}

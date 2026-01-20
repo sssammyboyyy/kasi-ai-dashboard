@@ -1,0 +1,32 @@
+{
+    "mode": "full_pipeline",
+    "searchQuery": "office cleaning",
+    "locations": [
+        "Johannesburg, Gauteng",
+        "Sandton, Gauteng",
+        "Pretoria, Gauteng",
+        "Cape Town, Western Cape",
+        "Durban, KwaZulu-Natal"
+    ],
+    "maxResultsPerLocation": 100,
+    "enrichmentMethods": [
+        "website",
+        "pattern",
+        "dns",
+        "dork"
+    ],
+    "verifyEmails": true,
+    "findDecisionMaker": true,
+    "scoringWeights": {
+        "hasEmail": 30,
+        "hasPhone": 20,
+        "hasWebsite": 15,
+        "hasDecisionMaker": 25,
+        "emailVerified": 10
+    },
+    "minScoreThreshold": 40,
+    "generateCallScripts": true,
+    "generateEmailTemplates": true,
+    "outputFormat": "json",
+    "maxConcurrency": 5
+}
