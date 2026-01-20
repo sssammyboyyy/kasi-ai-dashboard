@@ -48,15 +48,28 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     org_id uuid REFERENCES public.organizations(id),
     full_name text,
     avatar_url text,
-    role text DEFAULT 'client_admin', -- 'platform_admin', 'client_admin', 'sales_agent'
+    role text DEFAULT 'client_admin',
     onboarding_status text DEFAULT 'pending',
     updated_at timestamp DEFAULT now()
 );
 
+-- Safely add org_id if profiles table already existed without it
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='profiles' AND column_name='org_id') THEN
+        ALTER TABLE public.profiles ADD COLUMN org_id uuid REFERENCES public.organizations(id);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='profiles' AND column_name='role') THEN
+        ALTER TABLE public.profiles ADD COLUMN role text DEFAULT 'client_admin';
+    END IF;
+END $$;
+
 -- CONTACTS (The CRM Leads - Separate from Raw Prospects)
 CREATE TABLE IF NOT EXISTS public.contacts (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-    org_id uuid REFERENCES public.organizations(id) NOT NULL,
+    org_id uuid REFERENCES public.organizations(id), -- Made nullable initially for migration safety, or add NOT NULL later
+    -- ... schema continues ...
     
     -- Contact Info
     full_name text,
@@ -66,16 +79,26 @@ CREATE TABLE IF NOT EXISTS public.contacts (
     company_name text,
     
     -- CRM Status
-    status text DEFAULT 'new', -- 'new', 'contacted', 'qualified', 'negotiating', 'closed_won', 'closed_lost'
+    status text DEFAULT 'new',
     value_amount decimal(10,2),
     
     -- Source Data
-    source text DEFAULT 'manual', -- 'scraped', 'survey', 'csv'
+    source text DEFAULT 'manual',
     enrichment_data jsonb DEFAULT '{}',
     
     created_at timestamp DEFAULT now(),
     updated_at timestamp DEFAULT now()
 );
+
+-- Safely add org_id if contacts table exists
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='contacts' AND column_name='org_id') THEN
+         -- If contacts existed, we might need to backfill org_id or allow nulls. 
+         -- For now, we add it as nullable to prevent errors.
+        ALTER TABLE public.contacts ADD COLUMN org_id uuid REFERENCES public.organizations(id);
+    END IF;
+END $$;
 
 -- CAMPAIGNS (Automation)
 CREATE TABLE IF NOT EXISTS public.campaigns (
