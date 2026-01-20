@@ -178,7 +178,10 @@ export function Sidebar() {
                         <>
                             <div className="flex-1 text-left">
                                 <p className="text-sm font-semibold text-gray-900">{currentOrg?.name || 'Loading...'}</p>
-                                <p className="text-xs text-gray-500">Pro Plan</p>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                    <div className="h-1 w-1 rounded-full bg-green-500 animate-pulse" />
+                                    <p className="text-[10px] font-bold text-green-600 uppercase tracking-wider">Live Supabase</p>
+                                </div>
                             </div>
                             <ChevronDown className={cn("h-4 w-4 text-gray-400 transition-transform", orgDropdownOpen && "rotate-180")} />
                         </>
@@ -300,8 +303,8 @@ export function Sidebar() {
                     </div>
                     {!collapsed && (
                         <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-900">{profile?.full_name || 'Sam'}</p>
-                            <p className="text-xs text-gray-500 truncate w-32">{profile?.email || 'sam@example.com'}</p>
+                            <p className="text-sm font-semibold text-gray-900">{profile?.full_name || 'Loading...'}</p>
+                            <p className="text-xs text-gray-500 truncate w-32">{profile?.email || 'authenticated user'}</p>
                         </div>
                     )}
                     {!collapsed && (
