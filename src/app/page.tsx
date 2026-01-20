@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Hero3D } from "@/components/marketing/Hero3D";
 import { TrustMarquee } from "@/components/marketing/TrustMarquee";
+import { StatsSection } from "@/components/marketing/AnimatedCounter";
 import { motion } from "framer-motion";
 import { assetPath } from "@/lib/basePath";
 
@@ -134,6 +135,9 @@ export default function LandingPage() {
       <div className="border-b border-gray-100 bg-white">
         <TrustMarquee />
       </div>
+
+      {/* Animated Stats Section */}
+      <StatsSection />
 
       {/* Pain Points */}
       <section className="border-y border-gray-100 bg-gray-50/50 py-20">
