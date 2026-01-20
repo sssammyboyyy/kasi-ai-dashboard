@@ -67,39 +67,67 @@ export function Sidebar() {
 
     useEffect(() => {
         const loadSidebarData = async () => {
-            // 1. Get Session & Profile
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-                const { data: profileData } = await supabase
-                    .from('profiles')
-                    .select('full_name, avatar_url')
-                    .eq('id', session.user.id)
-                    .single();
+            console.log("Sidebar: Loading data...");
+            try {
+                // 1. Get Session & Profile
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-                setProfile({
-                    full_name: profileData?.full_name || 'User',
-                    email: session.user.email || null,
-                    avatar_url: profileData?.avatar_url || null
-                });
+                if (sessionError) {
+                    console.error("Sidebar: Session error", sessionError);
+                }
+
+                if (session?.user) {
+                    console.log("Sidebar: User found", session.user.email);
+                    const { data: profileData, error: profileError } = await supabase
+                        .from('profiles')
+                        .select('full_name, avatar_url')
+                        .eq('id', session.user.id)
+                        .maybeSingle();
+
+                    if (profileError) {
+                        console.error("Sidebar: Profile fetch error", profileError);
+                    }
+
+                    setProfile({
+                        full_name: profileData?.full_name || 'User',
+                        email: session.user.email || null,
+                        avatar_url: profileData?.avatar_url || null
+                    });
+                }
+
+                // 2. Get Organizations
+                const { data: orgsData, error: orgError } = await supabase
+                    .from('organizations')
+                    .select('id, name');
+
+                if (orgError) {
+                    console.error("Sidebar: Org fetch error", orgError);
+                }
+
+                if (orgsData && orgsData.length > 0) {
+                    const mappedOrgs = orgsData.map(o => ({ id: o.id, name: o.name }));
+                    setOrganizations(mappedOrgs);
+                    setCurrentOrg(mappedOrgs[0]);
+                } else {
+                    // Fallback for empty state / new users
+                    const defaultOrg = { id: 'default', name: 'Default Org' };
+                    setOrganizations([defaultOrg]);
+                    setCurrentOrg(defaultOrg);
+                }
+
+                // 3. Get Leads Count
+                const { count, error: countError } = await supabase
+                    .from('leads')
+                    .select('*', { count: 'exact', head: true });
+
+                if (countError) {
+                    console.error("Sidebar: Count error", countError);
+                }
+
+                setLeadsCount(count || 0);
+            } catch (err) {
+                console.error("Sidebar: Unexpected error", err);
             }
-
-            // 2. Get Organizations
-            const { data: orgsData } = await supabase
-                .from('organizations')
-                .select('id, name');
-
-            if (orgsData && orgsData.length > 0) {
-                const mappedOrgs = orgsData.map(o => ({ id: o.id, name: o.name }));
-                setOrganizations(mappedOrgs);
-                setCurrentOrg(mappedOrgs[0]);
-            }
-
-            // 3. Get Leads Count
-            const { count } = await supabase
-                .from('leads')
-                .select('*', { count: 'exact', head: true });
-
-            setLeadsCount(count || 0);
         };
 
         loadSidebarData();

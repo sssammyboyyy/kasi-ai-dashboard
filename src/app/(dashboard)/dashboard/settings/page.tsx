@@ -89,6 +89,8 @@ export default function SettingsPage() {
                     <div>
                         <label className="mb-1 block text-sm font-medium text-gray-700">Email Address</label>
                         <input
+                            id="user-email"
+                            name="email"
                             type="email"
                             value={user?.email || ""}
                             disabled
@@ -100,6 +102,8 @@ export default function SettingsPage() {
                     <div>
                         <label className="mb-1 block text-sm font-medium text-gray-700">Full Name</label>
                         <input
+                            id="full-name"
+                            name="fullName"
                             type="text"
                             value={fullName}
                             onChange={(e) => setFullName(e.target.value)}
