@@ -49,6 +49,16 @@ serve(async (req) => {
         if (payload.contact_name) score += 10;
         if (payload.address) score += 5;
 
+        // Fetch a default organization (for MVP/Single Tenant mode)
+        // In a real multi-tenant app, this would come from an API key or payload
+        const { data: orgData } = await supabase
+            .from("organizations")
+            .select("id")
+            .limit(1)
+            .single();
+
+        const defaultOrgId = orgData?.id;
+
         // Insert lead into database
         const { data: lead, error: insertError } = await supabase
             .from("leads")
@@ -62,6 +72,7 @@ serve(async (req) => {
                 source: payload.source || "api",
                 score: score,
                 status: "new",
+                org_id: defaultOrgId, // Assign to default org for visibility
                 raw_data: payload.raw_data,
                 created_at: new Date().toISOString(),
             })
