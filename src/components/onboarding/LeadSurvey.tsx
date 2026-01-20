@@ -117,6 +117,7 @@ const questions = [
         subtext: "We'll show you an easier way",
         type: "select",
         icon: Globe,
+        customIcon: "/icon_realtime_extraction.png",
         options: [
             "Word of mouth only",
             "Facebook/Social Media Ads",
@@ -133,6 +134,7 @@ const questions = [
         subtext: "Be honest - we've heard it all",
         type: "select",
         icon: Target,
+        customIcon: "/icon_growth_chart.png",
         options: [
             "Finding new clients",
             "Getting decision-maker contact info",
@@ -149,6 +151,7 @@ const questions = [
         subtext: "We have plans from R399 - most clients see ROI in week 1",
         type: "select",
         icon: DollarSign,
+        customIcon: "/icon_finance_budget.png",
         options: [
             "Less than R500/month",
             "R500 - R1,000/month",
@@ -166,6 +169,7 @@ const questions = [
         subtext: "Dream big - we'll help you get there",
         type: "select",
         icon: TrendingUp,
+        customIcon: "/icon_growth_chart.png",
         options: [
             "1-2 new contracts",
             "3-5 new contracts",
@@ -181,6 +185,7 @@ const questions = [
         subtext: "We'll target exactly these businesses for you",
         type: "select",
         icon: Factory,
+        customIcon: "/icon_cleaning_services.png",
         options: [
             "Small offices (1-20 employees)",
             "Medium offices (20-100 employees)",
@@ -197,6 +202,7 @@ const questions = [
         subtext: "We'll only send leads in your area",
         type: "text",
         icon: MapPin,
+        customIcon: "/icon_realtime_extraction.png",
         placeholder: "e.g., Johannesburg, Sandton, Midrand"
     },
 
@@ -208,6 +214,7 @@ const questions = [
         subtext: "We'll send your first 25 FREE leads here instantly",
         type: "tel",
         icon: MessageCircle,
+        customIcon: "/icon_whatsapp_scripts.png",
         placeholder: "+27 82 555 1234"
     },
     {
@@ -217,6 +224,7 @@ const questions = [
         subtext: "For your lead reports and dashboard access",
         type: "email",
         icon: Mail,
+        customIcon: "/icon_contact_info.png",
         placeholder: "you@yourbusiness.co.za"
     },
     {
@@ -226,6 +234,7 @@ const questions = [
         subtext: "We respect your time",
         type: "select",
         icon: Phone,
+        customIcon: "/icon_whatsapp_scripts.png",
         options: [
             "WhatsApp (recommended)",
             "Phone call",
@@ -242,6 +251,7 @@ const questions = [
         subtext: "We can have you set up in 24 hours",
         type: "select",
         icon: Calendar,
+        customIcon: "/icon_calendar_clock.png",
         options: [
             "Immediately - I need clients now",
             "This week",
@@ -619,9 +629,9 @@ export function LeadSurvey() {
                                         <Image
                                             src={assetPath(question.customIcon)}
                                             alt={question.question}
-                                            width={40}
-                                            height={40}
-                                            className="h-10 w-10 object-contain"
+                                            width={80}
+                                            height={80}
+                                            className="h-20 w-20 object-contain"
                                         />
                                     ) : (
                                         <question.icon className="h-10 w-10 text-blue-600" />
