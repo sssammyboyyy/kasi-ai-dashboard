@@ -93,7 +93,7 @@ export default function AnalyticsPage() {
         }
 
         fetchAnalytics();
-    }, [supabase]);
+    }, []);
 
     if (loading) {
         return (

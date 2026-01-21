@@ -17,7 +17,9 @@ import {
     BarChart3,
     Bell,
     LogOut,
-    Sparkles
+    Sparkles,
+    CreditCard,
+    Truck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/ui/Logo";
@@ -38,10 +40,11 @@ interface Organization {
 const navItems: NavItem[] = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Leads", href: "/dashboard/leads", icon: Users },
-    { label: "Campaigns", href: "/dashboard/campaigns", icon: Megaphone },
+    { label: "Fulfillment", href: "/dashboard/campaigns", icon: Truck }, // Was Campaigns
     { label: "Messages", href: "/dashboard/messages", icon: MessageSquare },
     { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
     { label: "Team", href: "/dashboard/team", icon: Building2 },
+    { label: "Billing", href: "/dashboard/settings/billing", icon: CreditCard },
     { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 

@@ -1,73 +1,67 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, ArrowRight, Check, Loader2, MessageSquare, Mail, Users } from "lucide-react";
-import { useRouter } from "next/navigation";
-
-const steps = [
-    { id: 1, name: "Details", description: "Campaign basics" },
-    { id: 2, name: "Channel", description: "Choose delivery method" },
-    { id: 3, name: "Audience", description: "Select recipients" },
-    { id: 4, name: "Review", description: "Confirm & launch" },
-];
-
-type Channel = "whatsapp" | "email" | null;
+import { Progress } from "@/components/ui/progress";
+import { ArrowLeft, ArrowRight, Check, Rocket, Megaphone, Target, Mail } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function NewCampaignPage() {
-    const [currentStep, setCurrentStep] = useState(1);
-    const [loading, setLoading] = useState(false);
-    const [campaignName, setCampaignName] = useState("");
-    const [campaignDescription, setCampaignDescription] = useState("");
-    const [channel, setChannel] = useState<Channel>(null);
-    const [audienceType, setAudienceType] = useState<"all" | "new" | "contacted">("all");
     const router = useRouter();
     const supabase = createClient();
+    const [step, setStep] = useState(1);
+    const [loading, setLoading] = useState(false);
 
-    const canProceed = () => {
-        switch (currentStep) {
-            case 1:
-                return campaignName.trim().length > 0;
-            case 2:
-                return channel !== null;
-            case 3:
-                return audienceType !== null;
-            case 4:
-                return true;
-            default:
-                return false;
-        }
-    };
+    // Form State
+    const [formData, setFormData] = useState({
+        name: "",
+        description: "",
+        type: "email",
+        targetIndustries: "",
+        status: "draft"
+    });
+
+    const totalSteps = 4;
+    const progress = (step / totalSteps) * 100;
 
     const handleNext = () => {
-        if (currentStep < 4 && canProceed()) {
-            setCurrentStep(currentStep + 1);
-        }
+        if (step < totalSteps) setStep(step + 1);
     };
 
     const handleBack = () => {
-        if (currentStep > 1) {
-            setCurrentStep(currentStep - 1);
-        }
+        if (step > 1) setStep(step - 1);
     };
 
-    const handleLaunch = async () => {
+    const handleSubmit = async () => {
         setLoading(true);
         try {
+            // Get current user's org
             const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error("No user found");
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('org_id')
+                .eq('id', user.id)
+                .single();
+
+            if (!profile?.org_id) throw new Error("No organization found");
 
             const { error } = await supabase.from("campaigns").insert({
-                name: campaignName,
-                description: campaignDescription,
-                channel,
-                audience_type: audienceType,
+                name: formData.name,
+                description: formData.description,
+                type: formData.type,
+                org_id: profile.org_id,
                 status: "draft",
-                created_by: user?.id,
+                target_industries: formData.targetIndustries.split(',').map(s => s.trim()).filter(Boolean),
+                leads_collected: 0,
+                leads_converted: 0
             });
 
             if (error) throw error;
@@ -76,214 +70,252 @@ export default function NewCampaignPage() {
             router.refresh();
         } catch (error) {
             console.error("Error creating campaign:", error);
-            alert("Failed to create campaign. Please try again.");
+            alert("Failed to create campaign"); // Ideally use a toast here
         } finally {
             setLoading(false);
         }
     };
 
+    const stepUpdates = {
+        hidden: { opacity: 0, x: 20 },
+        visible: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: -20 }
+    };
+
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            <div className="max-w-2xl mx-auto">
-                {/* Header */}
-                <div className="mb-8">
-                    <Button variant="ghost" onClick={() => router.back()} className="mb-4">
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Back to Campaigns
-                    </Button>
-                    <h1 className="text-2xl font-bold">Create New Campaign</h1>
-                    <p className="text-muted-foreground">
-                        Set up your outreach campaign in a few simple steps
-                    </p>
-                </div>
-
-                {/* Progress Steps */}
-                <div className="mb-8">
-                    <div className="flex items-center justify-between">
-                        {steps.map((step, index) => (
-                            <div key={step.id} className="flex items-center">
-                                <div
-                                    className={`flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all ${currentStep > step.id
-                                            ? "bg-primary border-primary text-white"
-                                            : currentStep === step.id
-                                                ? "border-primary text-primary"
-                                                : "border-gray-300 text-gray-300"
-                                        }`}
-                                >
-                                    {currentStep > step.id ? (
-                                        <Check className="h-4 w-4" />
-                                    ) : (
-                                        step.id
-                                    )}
-                                </div>
-                                {index < steps.length - 1 && (
-                                    <div
-                                        className={`w-12 h-0.5 mx-2 ${currentStep > step.id ? "bg-primary" : "bg-gray-300"
-                                            }`}
-                                    />
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                    <div className="flex justify-between mt-2">
-                        {steps.map((step) => (
-                            <div key={step.id} className="text-center">
-                                <p className={`text-xs font-medium ${currentStep === step.id ? "text-primary" : "text-gray-500"}`}>
-                                    {step.name}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Step Content */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{steps[currentStep - 1].name}</CardTitle>
-                        <CardDescription>{steps[currentStep - 1].description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {/* Step 1: Details */}
-                        {currentStep === 1 && (
-                            <>
-                                <div className="space-y-2">
-                                    <Label htmlFor="name">Campaign Name *</Label>
-                                    <Input
-                                        id="name"
-                                        placeholder="e.g., Q1 Property Launch"
-                                        value={campaignName}
-                                        onChange={(e) => setCampaignName(e.target.value)}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="description">Description</Label>
-                                    <Textarea
-                                        id="description"
-                                        placeholder="Brief description of this campaign..."
-                                        value={campaignDescription}
-                                        onChange={(e) => setCampaignDescription(e.target.value)}
-                                        rows={4}
-                                    />
-                                </div>
-                            </>
-                        )}
-
-                        {/* Step 2: Channel */}
-                        {currentStep === 2 && (
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <Card
-                                    className={`cursor-pointer transition-all ${channel === "whatsapp"
-                                            ? "border-primary ring-2 ring-primary"
-                                            : "hover:border-gray-400"
-                                        }`}
-                                    onClick={() => setChannel("whatsapp")}
-                                >
-                                    <CardContent className="flex flex-col items-center justify-center p-6">
-                                        <div className="p-3 rounded-full bg-green-100 mb-3">
-                                            <MessageSquare className="h-6 w-6 text-green-600" />
-                                        </div>
-                                        <h3 className="font-medium">WhatsApp</h3>
-                                        <p className="text-sm text-muted-foreground text-center">
-                                            Send messages via WhatsApp
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                                <Card
-                                    className={`cursor-pointer transition-all ${channel === "email"
-                                            ? "border-primary ring-2 ring-primary"
-                                            : "hover:border-gray-400"
-                                        }`}
-                                    onClick={() => setChannel("email")}
-                                >
-                                    <CardContent className="flex flex-col items-center justify-center p-6">
-                                        <div className="p-3 rounded-full bg-blue-100 mb-3">
-                                            <Mail className="h-6 w-6 text-blue-600" />
-                                        </div>
-                                        <h3 className="font-medium">Email</h3>
-                                        <p className="text-sm text-muted-foreground text-center">
-                                            Send email campaigns
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        )}
-
-                        {/* Step 3: Audience */}
-                        {currentStep === 3 && (
-                            <div className="space-y-3">
-                                {[
-                                    { value: "all", label: "All Leads", description: "Target all leads in your database" },
-                                    { value: "new", label: "New Leads Only", description: "Leads added in the last 7 days" },
-                                    { value: "contacted", label: "Contacted Leads", description: "Leads that have been contacted before" },
-                                ].map((option) => (
-                                    <Card
-                                        key={option.value}
-                                        className={`cursor-pointer transition-all ${audienceType === option.value
-                                                ? "border-primary ring-2 ring-primary"
-                                                : "hover:border-gray-400"
-                                            }`}
-                                        onClick={() => setAudienceType(option.value as typeof audienceType)}
-                                    >
-                                        <CardContent className="flex items-center gap-4 p-4">
-                                            <div className="p-2 rounded-full bg-purple-100">
-                                                <Users className="h-5 w-5 text-purple-600" />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-medium">{option.label}</h3>
-                                                <p className="text-sm text-muted-foreground">{option.description}</p>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Step 4: Review */}
-                        {currentStep === 4 && (
-                            <div className="space-y-4">
-                                <div className="p-4 bg-gray-50 rounded-lg space-y-3">
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Campaign Name</span>
-                                        <span className="font-medium">{campaignName}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Channel</span>
-                                        <span className="font-medium capitalize">{channel}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Audience</span>
-                                        <span className="font-medium capitalize">{audienceType.replace("_", " ")}</span>
-                                    </div>
-                                </div>
-                                <p className="text-sm text-muted-foreground">
-                                    Your campaign will be saved as a draft. You can launch it from the Campaigns page.
-                                </p>
-                            </div>
-                        )}
-                    </CardContent>
-                    <CardFooter className="flex justify-between">
-                        <Button
-                            variant="outline"
-                            onClick={handleBack}
-                            disabled={currentStep === 1}
-                        >
-                            <ArrowLeft className="h-4 w-4 mr-2" />
-                            Back
-                        </Button>
-                        {currentStep < 4 ? (
-                            <Button onClick={handleNext} disabled={!canProceed()}>
-                                Next
-                                <ArrowRight className="h-4 w-4 ml-2" />
-                            </Button>
-                        ) : (
-                            <Button onClick={handleLaunch} disabled={loading}>
-                                {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                                Create Campaign
-                            </Button>
-                        )}
-                    </CardFooter>
-                </Card>
+        <div className="max-w-3xl mx-auto space-y-8 py-8">
+            {/* Header */}
+            <div>
+                <Button
+                    variant="ghost"
+                    className="mb-4 pl-0 hover:bg-transparent hover:text-blue-600 gap-2"
+                    onClick={() => router.back()}
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to Campaigns
+                </Button>
+                <h1 className="text-3xl font-bold font-outfit text-gray-900">Create New Campaign</h1>
+                <p className="text-muted-foreground mt-2">
+                    Follow the steps to set up your automated outreach campaign.
+                </p>
             </div>
+
+            {/* Progress */}
+            <div className="space-y-2">
+                <div className="flex justify-between text-sm font-medium text-gray-500">
+                    <span>Step {step} of {totalSteps}</span>
+                    <span>{Math.round(progress)}% Complete</span>
+                </div>
+                <Progress value={progress} className="h-2" />
+            </div>
+
+            {/* Wizard Content */}
+            <Card className="min-h-[400px] flex flex-col relative overflow-hidden">
+
+                <CardContent className="flex-1 pt-6">
+                    <AnimatePresence mode="wait">
+                        {step === 1 && (
+                            <motion.div
+                                key="step1"
+                                variants={stepUpdates}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                className="space-y-6"
+                            >
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="p-3 rounded-full bg-blue-100 text-blue-600">
+                                            <Megaphone className="h-6 w-6" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-semibold">Campaign Details</h2>
+                                            <p className="text-sm text-gray-500">Give your campaign a name and purpose</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="name">Campaign Name</Label>
+                                        <Input
+                                            id="name"
+                                            placeholder="e.g., Q1 Outreach - Tech Startups"
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="description">Description (Optional)</Label>
+                                        <Textarea
+                                            id="description"
+                                            placeholder="What is the goal of this campaign?"
+                                            value={formData.description}
+                                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                            className="resize-none"
+                                            rows={4}
+                                        />
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {step === 2 && (
+                            <motion.div
+                                key="step2"
+                                variants={stepUpdates}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                className="space-y-6"
+                            >
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="p-3 rounded-full bg-purple-100 text-purple-600">
+                                            <Target className="h-6 w-6" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-semibold">Target Audience</h2>
+                                            <p className="text-sm text-gray-500">Who are you trying to reach?</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="industries">Target Industries</Label>
+                                        <Input
+                                            id="industries"
+                                            placeholder="e.g., SaaS, Healthcare, Fintech (comma separated)"
+                                            value={formData.targetIndustries}
+                                            onChange={(e) => setFormData({ ...formData, targetIndustries: e.target.value })}
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            This helps the AI optimize your messaging.
+                                        </p>
+                                    </div>
+
+                                    {/* Mock Audience Selector */}
+                                    <div className="p-4 border rounded-lg bg-gray-50 space-y-3">
+                                        <p className="text-sm font-medium text-gray-700">Estimated Audience Size</p>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-2xl font-bold text-gray-900">2,450+</span>
+                                            <span className="text-sm text-gray-500">potential leads found</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {step === 3 && (
+                            <motion.div
+                                key="step3"
+                                variants={stepUpdates}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                className="space-y-6"
+                            >
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="p-3 rounded-full bg-orange-100 text-orange-600">
+                                            <Mail className="h-6 w-6" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-semibold">Channel & Type</h2>
+                                            <p className="text-sm text-gray-500">How should we reach them?</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div
+                                            className={`cursor-pointer border-2 rounded-xl p-4 transition-all ${formData.type === 'email' ? 'border-primary bg-primary/5' : 'border-gray-100 hover:border-gray-200'}`}
+                                            onClick={() => setFormData({ ...formData, type: 'email' })}
+                                        >
+                                            <div className="mb-2 font-semibold">Email Sequence</div>
+                                            <div className="text-sm text-gray-500">Send personalized email drips</div>
+                                        </div>
+                                        <div
+                                            className={`cursor-pointer border-2 rounded-xl p-4 transition-all ${formData.type === 'whatsapp' ? 'border-primary bg-primary/5' : 'border-gray-100 hover:border-gray-200'}`}
+                                            onClick={() => setFormData({ ...formData, type: 'whatsapp' })}
+                                        >
+                                            <div className="mb-2 font-semibold">WhatsApp</div>
+                                            <div className="text-sm text-gray-500">Direct instant messaging</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {step === 4 && (
+                            <motion.div
+                                key="step4"
+                                variants={stepUpdates}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                className="space-y-6"
+                            >
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="p-3 rounded-full bg-green-100 text-green-600">
+                                            <Rocket className="h-6 w-6" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-xl font-semibold">Ready to Launch</h2>
+                                            <p className="text-sm text-gray-500">Review your campaign details</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-lg border bg-gray-50 p-4 space-y-3">
+                                        <div className="grid grid-cols-3 gap-2 text-sm">
+                                            <span className="font-medium text-gray-500">Name:</span>
+                                            <span className="col-span-2 font-medium">{formData.name}</span>
+
+                                            <span className="font-medium text-gray-500">Type:</span>
+                                            <span className="col-span-2 capitalize">{formData.type}</span>
+
+                                            <span className="font-medium text-gray-500">Target:</span>
+                                            <span className="col-span-2">{formData.targetIndustries || "General"}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </CardContent>
+
+                <CardFooter className="border-t bg-gray-50/50 p-6 flex justify-between">
+                    <Button
+                        variant="outline"
+                        onClick={handleBack}
+                        disabled={step === 1 || loading}
+                    >
+                        Back
+                    </Button>
+
+                    {step < totalSteps ? (
+                        <Button
+                            onClick={handleNext}
+                            disabled={!formData.name && step === 1}
+                            className="bg-blue-600 hover:bg-blue-700 gap-2"
+                        >
+                            Next Step <ArrowRight className="h-4 w-4" />
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={handleSubmit}
+                            disabled={loading}
+                            className="bg-green-600 hover:bg-green-700 gap-2"
+                        >
+                            {loading ? (
+                                "Creating..."
+                            ) : (
+                                <>
+                                    <Check className="h-4 w-4" /> Create Campaign
+                                </>
+                            )}
+                        </Button>
+                    )}
+                </CardFooter>
+            </Card>
         </div>
     );
 }

@@ -20,7 +20,7 @@ interface LeadPayload {
     raw_data?: Record<string, unknown>;
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
     // Handle CORS preflight
     if (req.method === "OPTIONS") {
         return new Response("ok", { headers: corsHeaders });
@@ -32,6 +32,30 @@ serve(async (req) => {
             Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
         );
 
+        // Security Check: Validate API Key
+        const apiKey = req.headers.get("x-api-key");
+        if (!apiKey) {
+            return new Response(
+                JSON.stringify({ error: "Missing x-api-key header" }),
+                { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+        }
+
+        // Verify Key in DB
+        const { data: keyData, error: keyError } = await supabase
+            .from("api_keys")
+            .select("org_id, status")
+            .eq("key_hash", apiKey) // In prod, we'd hash the incoming key first
+            .single();
+
+        if (keyError || !keyData || keyData.status !== 'active') {
+            return new Response(
+                JSON.stringify({ error: "Invalid or revoked API Key" }),
+                { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+        }
+
+        const orgId = keyData.org_id;
         const payload: LeadPayload = await req.json();
 
         // Validate required fields
@@ -49,16 +73,6 @@ serve(async (req) => {
         if (payload.contact_name) score += 10;
         if (payload.address) score += 5;
 
-        // Fetch a default organization (for MVP/Single Tenant mode)
-        // In a real multi-tenant app, this would come from an API key or payload
-        const { data: orgData } = await supabase
-            .from("organizations")
-            .select("id")
-            .limit(1)
-            .single();
-
-        const defaultOrgId = orgData?.id;
-
         // Insert lead into database
         const { data: lead, error: insertError } = await supabase
             .from("leads")
@@ -72,7 +86,7 @@ serve(async (req) => {
                 source: payload.source || "api",
                 score: score,
                 status: "new",
-                org_id: defaultOrgId, // Assign to default org for visibility
+                org_id: orgId, // SECURE: Assigned to specific org via API Key
                 raw_data: payload.raw_data,
                 created_at: new Date().toISOString(),
             })

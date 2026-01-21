@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import {
@@ -15,7 +16,8 @@ import {
     Clock,
     Target,
     TrendingUp,
-    Users
+    Users,
+    Truck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -40,6 +42,7 @@ const statusConfig = {
 export default function CampaignsPage() {
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [loading, setLoading] = useState(true);
+    const [runningFulfillment, setRunningFulfillment] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const supabase = createClient();
 
@@ -81,7 +84,7 @@ export default function CampaignsPage() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [supabase]);
+    }, []);
 
     const filteredCampaigns = campaigns.filter(c =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -100,18 +103,44 @@ export default function CampaignsPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <div className="flex items-center gap-3">
-                        <h1 className="font-outfit text-3xl font-bold text-gray-900">Campaigns</h1>
+                        <h1 className="font-outfit text-3xl font-bold text-gray-900">Fulfillment</h1>
                         <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 uppercase">
-                            <Megaphone className="h-2.5 w-2.5" />
-                            Marketing
+                            <Truck className="h-2.5 w-2.5" />
+                            Delivery
                         </span>
                     </div>
-                    <p className="text-gray-500">Automate your lead outreach and tracking</p>
+                    <p className="text-gray-500">Manage your lead orders and delivery status</p>
                 </div>
-                <Button className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg shadow-blue-500/20">
-                    <Plus className="h-4 w-4" />
-                    New Campaign
-                </Button>
+                <div className="flex gap-2">
+                    <Button
+                        variant="outline"
+                        className="gap-2"
+                        disabled={runningFulfillment}
+                        onClick={async () => {
+                            if (confirm("Run fulfillment process now? This will dispatch pending orders.")) {
+                                setRunningFulfillment(true);
+                                try {
+                                    const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/run-campaigns`, {
+                                        method: 'POST',
+                                        headers: { 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` }
+                                    });
+                                    if (res.ok) alert("Fulfillment started successfully!");
+                                    else alert("Failed to start fulfillment");
+                                } catch (e) { console.error(e); alert("Error triggering fulfillment"); }
+                                finally { setRunningFulfillment(false); }
+                            }
+                        }}
+                    >
+                        {runningFulfillment ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <Play className="h-4 w-4" />}
+                        {runningFulfillment ? "Running..." : "Run Fulfillment"}
+                    </Button>
+                    <Link href="/dashboard/campaigns/new">
+                        <Button className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg shadow-blue-500/20">
+                            <Plus className="h-4 w-4" />
+                            New Order
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             {/* Stats */}

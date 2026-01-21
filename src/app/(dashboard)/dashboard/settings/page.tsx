@@ -8,9 +8,11 @@ import { User, Building, LogOut, Loader2, Save } from "lucide-react";
 export default function SettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [generatingKey, setGeneratingKey] = useState(false);
     const [user, setUser] = useState<any>(null);
     const [profile, setProfile] = useState<any>(null);
     const [fullName, setFullName] = useState("");
+    const [apiKey, setApiKey] = useState<any>(null);
     const supabase = createClient();
 
     useEffect(() => {
@@ -29,6 +31,21 @@ export default function SettingsPage() {
                     if (profile) {
                         setProfile(profile);
                         setFullName(profile.full_name || "");
+
+                        // Load API Keys
+                        if (profile.org_id) {
+                            const { data: keys } = await supabase
+                                .from('api_keys')
+                                .select('*')
+                                .eq('org_id', profile.org_id)
+                                .eq('status', 'active')
+                                .order('created_at', { ascending: false })
+                                .limit(1);
+
+                            if (keys && keys.length > 0) {
+                                setApiKey(keys[0]);
+                            }
+                        }
                     }
                 }
             } catch (error) {
@@ -40,6 +57,36 @@ export default function SettingsPage() {
 
         loadProfile();
     }, [supabase]);
+
+    const handleGenerateKey = async () => {
+        if (!profile?.org_id) return;
+        setGeneratingKey(true);
+        try {
+            // Revoke old keys logic if needed, but for now we just create a new one
+            // The UI only shows the latest active one
+
+            const newKeyStr = `sk_live_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+
+            const { data, error } = await supabase
+                .from('api_keys')
+                .insert({
+                    org_id: profile.org_id,
+                    key_hash: newKeyStr,
+                    name: 'Default Key',
+                    status: 'active'
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+            setApiKey(data);
+        } catch (error) {
+            console.error("Error generating key:", error);
+            alert("Failed to generate API key");
+        } finally {
+            setGeneratingKey(false);
+        }
+    };
 
     const handleUpdateProfile = async () => {
         if (!user) return;
@@ -86,6 +133,20 @@ export default function SettingsPage() {
                     Profile Information
                 </h2>
                 <div className="mt-6 space-y-4">
+                    <div className="p-4 border border-purple-100 bg-purple-50/50 rounded-xl flex items-center justify-between">
+                        <div>
+                            <h3 className="text-sm font-semibold text-purple-900 mb-1">Subscription Plan</h3>
+                            <p className="text-xs text-purple-700">Manage your billing and payment method.</p>
+                        </div>
+                        <Button
+                            variant="outline"
+                            className="text-purple-700 border-purple-200 hover:bg-purple-100"
+                            onClick={() => window.location.href = "/dashboard/settings/billing"}
+                        >
+                            Manage Billing
+                        </Button>
+                    </div>
+
                     <div>
                         <label className="mb-1 block text-sm font-medium text-gray-700">Email Address</label>
                         <input
@@ -137,15 +198,52 @@ export default function SettingsPage() {
             <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
                 <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
                     <Building className="h-5 w-5 text-purple-600" />
-                    Organization
+                    Organization & API Keys
                 </h2>
-                <div className="mt-6">
-                    <p className="text-sm text-gray-500">
-                        You are currently viewing the <span className="font-semibold text-gray-900">Default Organization</span> workspace.
-                    </p>
-                    <p className="mt-2 text-sm text-gray-500">
-                        Multi-organization support coming soon.
-                    </p>
+                <div className="mt-6 space-y-6">
+                    <div>
+                        <p className="text-sm text-gray-500 mb-4">
+                            Manage access to your Kasi AI organization.
+                        </p>
+                        <div className="p-4 border border-blue-100 bg-blue-50/50 rounded-xl">
+                            <h3 className="text-sm font-semibold text-blue-900 mb-1">Developer API Access</h3>
+                            <p className="text-xs text-blue-700 mb-3">
+                                Use this key to authenticate requests to the <code>process-lead</code> endpoint.
+                            </p>
+                            <div className="flex items-center gap-2">
+                                {apiKey ? (
+                                    <>
+                                        <code className="flex-1 bg-white border border-blue-200 rounded-lg px-3 py-2 text-xs font-mono text-gray-600 break-all">
+                                            {apiKey.key_hash}
+                                        </code>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-9"
+                                            onClick={() => {
+                                                if (confirm("Are you sure? The old key will stop working immediately.")) {
+                                                    handleGenerateKey();
+                                                }
+                                            }}
+                                            disabled={generatingKey}
+                                        >
+                                            {generatingKey ? <Loader2 className="h-4 w-4 animate-spin" /> : "Roll Key"}
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <Button
+                                        size="sm"
+                                        className="h-9 w-full sm:w-auto"
+                                        onClick={handleGenerateKey}
+                                        disabled={generatingKey}
+                                    >
+                                        {generatingKey ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "Generate API Key"}
+                                        {generatingKey ? "Generating..." : ""}
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

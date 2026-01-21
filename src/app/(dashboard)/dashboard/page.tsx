@@ -85,7 +85,7 @@ export default function DashboardPage() {
             clearInterval(logInterval);
             supabase.removeChannel(channel);
         };
-    }, [supabase]);
+    }, []);
 
     return (
         <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white font-sans">

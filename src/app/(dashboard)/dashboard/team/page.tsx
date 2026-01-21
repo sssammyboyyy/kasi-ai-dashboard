@@ -51,7 +51,7 @@ export default function TeamPage() {
         }
 
         fetchTeamMembers();
-    }, [supabase]);
+    }, []);
 
     const handleInvite = async () => {
         if (!inviteEmail.trim()) return;
