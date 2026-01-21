@@ -23,6 +23,7 @@ import {
     Clock,
     Mail,
     Phone,
+    Brain
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -112,8 +113,11 @@ export default function DashboardPage() {
 
             {/* Stats Bar */}
             <ScrollReveal>
-                <div className="border-b border-gray-100 bg-white py-6">
-                    <div className="mx-auto grid max-w-7xl grid-cols-3 gap-8 px-6">
+                <div className="border-b border-gray-100 bg-white py-6 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-2 opacity-10">
+                        <Brain className="h-32 w-32" />
+                    </div>
+                    <div className="mx-auto grid max-w-7xl grid-cols-3 gap-8 px-6 relative z-10">
                         <div className="flex items-center gap-4">
                             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50">
                                 <Users className="h-6 w-6 text-blue-600" />
@@ -134,11 +138,11 @@ export default function DashboardPage() {
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-50">
-                                <Zap className="h-6 w-6 text-purple-600" />
+                                <Brain className="h-6 w-6 text-purple-600" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-gray-900">{stats.activeCampaigns}</p>
-                                <p className="text-sm text-gray-500">Active Campaigns</p>
+                                <p className="text-2xl font-bold text-gray-900">{stats.activeCampaigns} <span className="text-sm font-normal text-gray-400">/ Unlim</span></p>
+                                <p className="text-sm text-gray-500">AI Agents Active</p>
                             </div>
                         </div>
                     </div>

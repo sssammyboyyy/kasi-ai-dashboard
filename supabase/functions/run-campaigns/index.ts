@@ -44,6 +44,36 @@ serve(async (req) => {
 
             try {
                 if (notification.channel === "email" && notification.leads?.email) {
+
+                    // ✨ AI INTELLIGENCE LAYER (Phase 5)
+                    let finalHtml = notification.message;
+                    if (!finalHtml || finalHtml === "<p>Hello!</p>") {
+                        try {
+                            const copyRes = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-copy`, {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+                                },
+                                body: JSON.stringify({
+                                    lead_name: notification.leads.contact_name || "Partner",
+                                    company_name: "Potential Client",
+                                    industry: "Local Business"
+                                }),
+                            });
+
+                            if (copyRes.ok) {
+                                const copyData = await copyRes.json();
+                                if (copyData.copy) {
+                                    finalHtml = copyData.copy.replace(/\n/g, "<br>");
+                                }
+                            }
+                        } catch (err) {
+                            console.error("AI Generation failed, using fallback");
+                            finalHtml = "<p>Hello! We have leads for you.</p>";
+                        }
+                    }
+
                     // Call send-email function
                     const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-email`, {
                         method: "POST",
@@ -53,8 +83,8 @@ serve(async (req) => {
                         },
                         body: JSON.stringify({
                             to: notification.leads.email,
-                            subject: "New Opportunity", // Dynamic subject in future
-                            html: notification.message || "<p>Hello!</p>", // Use template
+                            subject: "Exclusive Leads Opportunity",
+                            html: finalHtml || "<p>Hello!</p>",
                         }),
                     });
 
