@@ -9,9 +9,9 @@ import { LOG_STREAM } from "@/data/mock-leads";
 import { Footer } from "@/components/ui/Footer";
 import { ScrollReveal } from "@/components/shared/ScrollReveal";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { assetPath } from "@/lib/basePath";
+import { toast } from "sonner";
 import {
     Activity,
     Users,
@@ -27,11 +27,10 @@ import {
     Flame,
     DollarSign,
     Target,
-    BarChart3,
-    Rocket
+    Rocket,
+    Menu,
+    Search
 } from "lucide-react";
-import { ServiceUpsellCard } from "@/components/dashboard/ServiceUpsellCard";
-import { LeadTeaser } from "@/components/dashboard/LeadTeaser";
 
 export default function DashboardPage() {
     const [leads, setLeads] = useState<any[]>([]);
@@ -124,303 +123,257 @@ export default function DashboardPage() {
         };
     }, []);
 
+    const handleContact = (lead: any, channel: 'whatsapp' | 'call') => {
+        let url = '';
+        if (channel === 'whatsapp') {
+            const text = `Hello ${lead.business_name}, I saw your business on Google Maps and I have a free lead for you. Are you taking on new work?`;
+            url = `https://wa.me/${lead.phone}?text=${encodeURIComponent(text)}`;
+        } else if (channel === 'call') {
+            url = `tel:${lead.phone}`;
+        }
+
+        if (url) window.open(url, channel === 'call' ? '_self' : '_blank');
+
+        // Optimistic Update
+        const updateStatus = (list: any[]) => list.map(l => l.id === lead.id ? { ...l, status: 'contacted' } : l);
+        setLeads(updateStatus);
+        setHotLeads(updateStatus);
+
+        // Database Update
+        supabase.from('leads').update({ status: 'contacted' }).eq('id', lead.id).then();
+        toast.success(`Contacted ${lead.business_name} via ${channel === 'whatsapp' ? 'WhatsApp' : 'Phone'}`);
+    };
+
     return (
-        <main className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 font-sans">
-            {/* Navigation */}
-            <nav className="sticky top-0 z-50 border-b border-slate-700 bg-slate-900/90 backdrop-blur-md">
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-                    <Link href="/" className="flex items-center gap-2">
-                        <Image src={assetPath("/logo.png")} alt="Kasi AI" width={180} height={60} className="h-10 w-auto" />
-                    </Link>
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                            <span className="relative flex h-3 w-3">
-                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                                <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500" />
-                            </span>
-                            <span className="text-sm font-medium text-green-400">System Online</span>
+        <main className="min-h-screen bg-[#000000] text-white font-sans selection:bg-blue-500/30">
+            {/* Ambient Background Mesh */}
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/20 rounded-full blur-[120px] animate-pulse" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-600/20 rounded-full blur-[120px] animate-pulse delay-1000" />
+            </div>
+
+            {/* Navigation (Glass) */}
+            <nav className="sticky top-0 z-50 border-b border-white/10 bg-black/50 backdrop-blur-xl">
+                <div className="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-4">
+                    <div className="flex items-center gap-12">
+                        <Link href="/" className="flex items-center gap-2 group">
+                            <div className="relative h-8 w-8 overflow-hidden rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-all">
+                                <Image src={assetPath("/logo.png")} alt="Kasi AI" width={32} height={32} className="h-full w-full object-cover opacity-90" />
+                            </div>
+                            <span className="font-outfit text-xl font-bold tracking-tight text-white group-hover:text-blue-400 transition-colors">Kasi AI</span>
+                        </Link>
+
+                        <div className="hidden md:flex items-center gap-6 text-sm font-medium text-white/60">
+                            <Link href="/dashboard" className="text-white">Dashboard</Link>
+                            <Link href="/dashboard/leads" className="hover:text-white transition-colors">Leads</Link>
+                            <Link href="/dashboard/campaigns" className="hover:text-white transition-colors">Campaigns</Link>
                         </div>
-                        <Badge className="bg-gradient-to-r from-orange-500 to-pink-500 text-white border-0">
-                            <Rocket className="mr-1 h-3 w-3" /> God Mode
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+                            <span className="relative flex h-2 w-2">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+                                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+                            </span>
+                            <span className="text-xs font-medium text-green-400">System Online</span>
+                        </div>
+                        <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 border-0 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 transition-all cursor-pointer">
+                            <Rocket className="mr-1.5 h-3 w-3" /> God Mode
                         </Badge>
+                        <Button size="icon" variant="ghost" className="md:hidden text-white/70">
+                            <Menu className="h-5 w-5" />
+                        </Button>
                     </div>
                 </div>
             </nav>
 
-            {/* Revenue Command Center */}
-            <ScrollReveal>
-                <div className="border-b border-slate-700 bg-gradient-to-r from-slate-800 to-slate-900 py-8">
-                    <div className="mx-auto max-w-7xl px-6">
-                        <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4">
-                            Revenue Command Center
-                        </h2>
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-                            {/* Pipeline Value */}
-                            <div className="col-span-2 md:col-span-1">
-                                <div className="rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/10 border border-green-500/30 p-4">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <DollarSign className="h-5 w-5 text-green-400" />
-                                        <span className="text-xs text-slate-400">Pipeline Value</span>
-                                    </div>
-                                    <p className="text-2xl font-bold text-green-400">
-                                        R{stats.pipelineValue.toLocaleString()}
-                                    </p>
-                                    <p className="text-xs text-slate-500 mt-1">Estimated from hot leads</p>
-                                </div>
-                            </div>
-
-                            {/* Total Leads */}
-                            <div className="rounded-xl bg-slate-800/50 border border-slate-700 p-4">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Users className="h-5 w-5 text-blue-400" />
-                                    <span className="text-xs text-slate-400">Total Leads</span>
-                                </div>
-                                <p className="text-2xl font-bold text-white">{stats.leadsTotal}</p>
-                                <p className="text-xs text-green-400 mt-1">+{stats.leadsToday} today</p>
-                            </div>
-
-                            {/* Hot Leads */}
-                            <div className="rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/10 border border-orange-500/30 p-4">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Flame className="h-5 w-5 text-orange-400" />
-                                    <span className="text-xs text-slate-400">Hot Leads</span>
-                                </div>
-                                <p className="text-2xl font-bold text-orange-400">{stats.hotLeadsCount}</p>
-                                <p className="text-xs text-slate-500 mt-1">Score 70+</p>
-                            </div>
-
-                            {/* Conversion Rate */}
-                            <div className="rounded-xl bg-slate-800/50 border border-slate-700 p-4">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Target className="h-5 w-5 text-purple-400" />
-                                    <span className="text-xs text-slate-400">Hot Rate</span>
-                                </div>
-                                <p className="text-2xl font-bold text-white">{stats.conversionRate}%</p>
-                                <p className="text-xs text-slate-500 mt-1">Leads → Hot</p>
-                            </div>
-
-                            {/* AI Agents */}
-                            <div className="rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/10 border border-purple-500/30 p-4">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Brain className="h-5 w-5 text-purple-400" />
-                                    <span className="text-xs text-slate-400">AI Agents</span>
-                                </div>
-                                <p className="text-2xl font-bold text-purple-400">5</p>
-                                <p className="text-xs text-green-400 mt-1">All systems go</p>
-                            </div>
-                        </div>
+            <div className="relative z-10 mx-auto max-w-[1400px] p-6 space-y-8">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div>
+                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-br from-white to-white/50 bg-clip-text text-transparent">
+                            Command Center
+                        </h1>
+                        <p className="mt-2 text-lg text-white/50">
+                            Live operational intelligence and revenue tracking.
+                        </p>
+                    </div>
+                    <div className="flex gap-3">
+                        <Button variant="outline" className="border-white/10 bg-white/5 hover:bg-white/10 text-white backdrop-blur-md">
+                            <Clock className="mr-2 h-4 w-4" /> Today
+                        </Button>
+                        <Button className="bg-[#fff] text-black hover:bg-white/90 shadow-xl shadow-white/10">
+                            <Zap className="mr-2 h-4 w-4 fill-black" /> Run Scraper
+                        </Button>
                     </div>
                 </div>
-            </ScrollReveal>
 
-            {/* Main Content */}
-            <div className="mx-auto max-w-7xl px-6 py-8">
-                <div className="grid gap-8 lg:grid-cols-5">
-                    {/* Hot Leads Priority (Left) */}
-                    <div className="lg:col-span-2">
-                        <div className="mb-4 flex items-center justify-between">
-                            <h2 className="flex items-center gap-2 font-outfit text-lg font-bold text-white">
+                {/* KPI Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                        { label: "Pipeline Value", value: `R${stats.pipelineValue.toLocaleString()}`, sub: "Based on hot leads", icon: DollarSign, color: "text-green-400", bg: "from-green-500/20 to-emerald-500/5", border: "border-green-500/20" },
+                        { label: "Total Leads", value: stats.leadsTotal, sub: `+${stats.leadsToday} today`, icon: Users, color: "text-blue-400", bg: "from-blue-500/20 to-cyan-500/5", border: "border-blue-500/20" },
+                        { label: "Hot Leads", value: stats.hotLeadsCount, sub: "Score 70+", icon: Flame, color: "text-orange-400", bg: "from-orange-500/20 to-red-500/5", border: "border-orange-500/20" },
+                        { label: "AI Agents", value: "5", sub: "Active & Hunting", icon: Brain, color: "text-purple-400", bg: "from-purple-500/20 to-pink-500/5", border: "border-purple-500/20" },
+                    ].map((stat, i) => (
+                        <ScrollReveal key={i} delay={i * 0.1}>
+                            <div className={`relative overflow-hidden rounded-3xl border ${stat.border} bg-gradient-to-br ${stat.bg} p-6 backdrop-blur-md transition-all hover:scale-[1.02] hover:shadow-2xl`}>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className={`p-3 rounded-2xl bg-white/5 border border-white/5 ${stat.color}`}>
+                                        <stat.icon className="h-6 w-6" />
+                                    </div>
+                                    <ArrowUpRight className="h-5 w-5 text-white/20" />
+                                </div>
+                                <div className="space-y-1">
+                                    <h3 className="text-3xl font-bold text-white tracking-tight">{stat.value}</h3>
+                                    <p className="text-sm font-medium text-white/50">{stat.label}</p>
+                                    <p className={`text-xs ${stat.color} font-mono mt-2`}>{stat.sub}</p>
+                                </div>
+                            </div>
+                        </ScrollReveal>
+                    ))}
+                </div>
+
+                <div className="grid lg:grid-cols-3 gap-8">
+                    {/* Hot Leads Column */}
+                    <div className="lg:col-span-1 space-y-6">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-xl font-bold flex items-center gap-2">
                                 <Flame className="h-5 w-5 text-orange-500" />
                                 Hot Leads
                             </h2>
-                            <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-                                Priority
-                            </Badge>
+                            <Badge className="bg-orange-500/20 text-orange-400 border border-orange-500/30">Priority</Badge>
                         </div>
 
-                        <Card className="bg-slate-800/50 border-slate-700 p-0">
-                            <div className="divide-y divide-slate-700">
-                                {hotLeads.map((lead) => (
-                                    <div key={lead.id} className="p-4 hover:bg-slate-700/50 transition-colors">
-                                        <div className="flex items-start justify-between mb-2">
-                                            <div>
-                                                <h3 className="font-semibold text-white">{lead.business_name}</h3>
-                                                <p className="text-xs text-slate-400">{lead.address}</p>
-                                            </div>
-                                            <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-                                                {lead.score}%
-                                            </Badge>
+                        <div className="space-y-4">
+                            {hotLeads.map((lead, i) => (
+                                <ScrollReveal key={lead.id} delay={i * 0.05}>
+                                    <div className="group relative overflow-hidden rounded-2xl border border-white/5 bg-white/5 p-5 backdrop-blur-xl transition-all hover:bg-white/10 hover:border-orange-500/30">
+                                        <div className="absolute top-0 right-0 p-3 opacity-50 group-hover:opacity-100 transition-opacity">
+                                            <Badge className="bg-orange-500/20 text-orange-400 border-0">{lead.score}%</Badge>
                                         </div>
-                                        <div className="flex items-center gap-4 text-xs text-slate-400 mb-3">
-                                            {lead.email && (
-                                                <span className="flex items-center gap-1">
-                                                    <Mail className="h-3 w-3" /> {lead.email}
-                                                </span>
-                                            )}
+
+                                        <div className="mb-4">
+                                            <h3 className="font-bold text-lg leading-tight">{lead.business_name}</h3>
+                                            <p className="text-sm text-white/50 mt-1">{lead.niche || "Unknown Niche"}</p>
                                         </div>
+
                                         <div className="flex gap-2">
-                                            <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700 text-xs">
-                                                <MessageSquare className="mr-1 h-3 w-3" /> WhatsApp
+                                            <Button
+                                                onClick={() => handleContact(lead, 'whatsapp')}
+                                                className="flex-1 bg-green-600/20 hover:bg-green-600 hover:text-white text-green-400 border border-green-600/30 transition-all"
+                                            >
+                                                <MessageSquare className="h-4 w-4 mr-2" /> WhatsApp
                                             </Button>
-                                            <Button size="sm" variant="outline" className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700 text-xs">
-                                                <Phone className="mr-1 h-3 w-3" /> Call
+                                            <Button
+                                                onClick={() => handleContact(lead, 'call')}
+                                                variant="outline"
+                                                className="flex-1 border-white/10 hover:bg-white/10 text-white/70 hover:text-white"
+                                            >
+                                                <Phone className="h-4 w-4 mr-2" /> Call
                                             </Button>
                                         </div>
                                     </div>
-                                ))}
-                                {hotLeads.length === 0 && (
-                                    <div className="p-8 text-center text-slate-500">
-                                        <Flame className="mx-auto h-8 w-8 mb-2 opacity-50" />
-                                        <p>No hot leads yet</p>
-                                        <p className="text-xs">Scrapers are building your pipeline</p>
-                                    </div>
-                                )}
-                            </div>
-                        </Card>
-
-                        {/* Activity Feed */}
-                        <div className="mt-6">
-                            <div className="mb-4 flex items-center justify-between">
-                                <h2 className="flex items-center gap-2 font-outfit text-lg font-bold text-white">
-                                    <Activity className="h-5 w-5 text-blue-500" />
-                                    Activity Feed
-                                </h2>
-                                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                                    Live
-                                </Badge>
-                            </div>
-
-                            <Card className="max-h-[300px] overflow-hidden bg-slate-800/50 border-slate-700 p-0">
-                                <div className="divide-y divide-slate-700">
-                                    <AnimatePresence mode="popLayout">
-                                        {logs.slice(0, 8).map((log, i) => (
-                                            <motion.div
-                                                key={`${log}-${i}`}
-                                                initial={{ opacity: 0, x: -20 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                exit={{ opacity: 0, x: 20 }}
-                                                className="flex items-start gap-3 px-4 py-3"
-                                            >
-                                                <div className={`mt-1 h-2 w-2 rounded-full ${log.includes("SUCCESS") ? "bg-green-500" :
-                                                    log.includes("EXTRACT") ? "bg-blue-500" :
-                                                        log.includes("ENRICH") ? "bg-purple-500" :
-                                                            "bg-slate-500"
-                                                    }`} />
-                                                <div className="flex-1">
-                                                    <p className="text-sm text-slate-300">{log}</p>
-                                                    <p className="mt-1 text-xs text-slate-500">
-                                                        <Clock className="mr-1 inline h-3 w-3" />
-                                                        Just now
-                                                    </p>
-                                                </div>
-                                            </motion.div>
-                                        ))}
-                                    </AnimatePresence>
+                                </ScrollReveal>
+                            ))}
+                            {hotLeads.length === 0 && (
+                                <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-white/30">
+                                    <Flame className="mx-auto h-8 w-8 mb-2 opacity-50" />
+                                    <p>No hot leads found yet.</p>
                                 </div>
-                            </Card>
+                            )}
                         </div>
-                    </div>
 
-                    {/* All Leads (Right) */}
-                    <div className="lg:col-span-3 space-y-6">
-                        <div>
-                            <div className="mb-4 flex items-center justify-between">
-                                <h2 className="flex items-center gap-2 font-outfit text-lg font-bold text-white">
-                                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                                    Recent Leads
-                                </h2>
-                                <Link href="/leads" className="text-sm font-medium text-blue-400 hover:underline">
-                                    View All →
-                                </Link>
-                            </div>
-
-                            <div className="grid gap-4 sm:grid-cols-2">
+                        {/* Recent Activity Mini Feed */}
+                        <div className="rounded-3xl border border-white/10 bg-black/40 p-6 backdrop-blur-xl">
+                            <h3 className="text-sm font-bold text-white/50 mb-4 uppercase tracking-wider">System Activity</h3>
+                            <div className="space-y-4 max-h-[300px] overflow-hidden mask-fade-bottom">
                                 <AnimatePresence mode="popLayout">
-                                    {leads.map((lead) => (
+                                    {logs.slice(0, 6).map((log, i) => (
                                         <motion.div
-                                            key={lead.id}
-                                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                                            exit={{ opacity: 0, scale: 0.95 }}
-                                            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                                            key={`${log}-${i}`}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0 }}
+                                            className="flex items-start gap-3 text-sm"
                                         >
-                                            <Card className="bg-slate-800/50 border-slate-700 p-5 transition-all hover:border-blue-500/50 hover:bg-slate-700/50">
-                                                <div className="mb-3 flex items-start justify-between">
-                                                    <div>
-                                                        <h3 className="font-semibold text-white">{lead.business_name}</h3>
-                                                        <p className="text-sm text-slate-400">{lead.niche} • {lead.address}</p>
-                                                    </div>
-                                                    <Badge className={`${lead.score >= 90 ? "bg-green-500/20 text-green-400 border-green-500/30" :
-                                                        lead.score >= 70 ? "bg-orange-500/20 text-orange-400 border-orange-500/30" :
-                                                            "bg-slate-600 text-slate-300"
-                                                        }`}>
-                                                        {lead.score}%
-                                                    </Badge>
-                                                </div>
-
-                                                <div className="mb-4 space-y-2 text-sm">
-                                                    {lead.email && (
-                                                        <div className="flex items-center gap-2 text-slate-400">
-                                                            <Mail className="h-4 w-4 text-slate-500" />
-                                                            <span className="truncate">{lead.email}</span>
-                                                        </div>
-                                                    )}
-                                                    {lead.phone && (
-                                                        <div className="flex items-center gap-2 text-slate-400">
-                                                            <Phone className="h-4 w-4 text-slate-500" />
-                                                            <span>{lead.phone}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                <div className="flex gap-2">
-                                                    <Button
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            const text = `Hello ${lead.business_name}, I saw your business on Google Maps and I have a free lead for you. are you taking on new work?`;
-                                                            window.open(`https://wa.me/${lead.phone}?text=${encodeURIComponent(text)}`, '_blank');
-
-                                                            // Optimistic Update
-                                                            setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: 'contacted' } : l));
-                                                            setHotLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: 'contacted' } : l));
-                                                            setStats(prev => ({ ...prev, leadsToday: prev.leadsToday })); // Force re-render if needed
-
-                                                            // DB Update
-                                                            supabase.from('leads').update({ status: 'contacted' }).eq('id', lead.id).then();
-                                                        }}
-                                                        className="flex-1 bg-green-600 hover:bg-green-700"
-                                                    >
-                                                        <MessageSquare className="mr-1 h-4 w-4" />
-                                                        WhatsApp
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => {
-                                                            window.open(`tel:${lead.phone}`, '_self');
-                                                            // Optimistic Update
-                                                            setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: 'contacted' } : l));
-                                                            setHotLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: 'contacted' } : l));
-
-                                                            // DB Update
-                                                            supabase.from('leads').update({ status: 'contacted' }).eq('id', lead.id).then();
-                                                        }}
-                                                        className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
-                                                    >
-                                                        Call
-                                                        <ArrowUpRight className="ml-1 h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </Card>
+                                            <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                                            <p className="text-white/70 leading-relaxed font-mono text-xs">{log}</p>
                                         </motion.div>
                                     ))}
                                 </AnimatePresence>
+                            </div>
+                        </div>
+                    </div>
 
-                                {leads.length === 0 && (
-                                    <div className="col-span-2 flex h-40 items-center justify-center rounded-lg border-2 border-dashed border-slate-700 text-slate-500">
-                                        <div className="text-center">
-                                            <Zap className="mx-auto mb-2 h-8 w-8 text-slate-600" />
-                                            <p>Initializing extraction...</p>
+                    {/* Main Feed Column */}
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-xl font-bold flex items-center gap-2">
+                                <Activity className="h-5 w-5 text-blue-500" />
+                                Recent Leads
+                            </h2>
+                            <Link href="/dashboard/leads">
+                                <Button variant="ghost" className="text-white/50 hover:text-white">View All <ArrowUpRight className="ml-1 h-4 w-4" /></Button>
+                            </Link>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            {leads.map((lead, i) => (
+                                <ScrollReveal key={lead.id} delay={i * 0.05}>
+                                    <div className="group h-full flex flex-col justify-between rounded-3xl border border-white/5 bg-white/[0.03] p-6 backdrop-blur-md transition-all hover:bg-white/[0.08] hover:border-white/10 hover:shadow-2xl">
+                                        <div>
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center font-bold text-white/50 text-sm">
+                                                    {lead.business_name.substring(0, 2).toUpperCase()}
+                                                </div>
+                                                <Badge className={`border-0 ${lead.score >= 70 ? 'bg-orange-500/20 text-orange-400' : 'bg-blue-500/20 text-blue-400'
+                                                    }`}>
+                                                    {lead.score}%
+                                                </Badge>
+                                            </div>
+
+                                            <h3 className="text-lg font-bold text-white mb-1 line-clamp-1">{lead.business_name}</h3>
+                                            <p className="text-sm text-white/50 mb-4 line-clamp-1">{lead.address}</p>
+
+                                            <div className="space-y-2 mb-6">
+                                                {lead.phone && (
+                                                    <div className="flex items-center gap-2 text-xs text-white/40">
+                                                        <Phone className="h-3 w-3" /> {lead.phone}
+                                                    </div>
+                                                )}
+                                                {lead.email && (
+                                                    <div className="flex items-center gap-2 text-xs text-white/40">
+                                                        <Mail className="h-3 w-3" /> {lead.email}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-2 mt-auto">
+                                            <Button
+                                                onClick={() => handleContact(lead, 'whatsapp')}
+                                                size="sm"
+                                                className="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/5"
+                                            >
+                                                <MessageSquare className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                onClick={() => handleContact(lead, 'call')}
+                                                size="sm"
+                                                className="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/5"
+                                            >
+                                                <Phone className="h-4 w-4" />
+                                            </Button>
                                         </div>
                                     </div>
-                                )}
-                            </div>
+                                </ScrollReveal>
+                            ))}
                         </div>
                     </div>
                 </div>
             </div>
-
-            <Footer />
         </main>
     );
 }
