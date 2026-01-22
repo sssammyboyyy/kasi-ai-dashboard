@@ -1,9 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(request: Request) {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
     try {
         const body = await request.json();
         const {
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
         } = body;
 
         // 1. Save Diagnosis to Supabase (so we have a record)
-        const supabase = createClient();
+        const supabase = await createClient();
         const { error: dbError } = await supabase.from('leads').insert({
             business_name: "Diagnosis Pending", // Placeholder or from another input
             email: client_email,
