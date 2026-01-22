@@ -109,10 +109,12 @@ export default function LeadsPage() {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {leads.slice(0, 10).map((lead) => (
-                                <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
+                                <tr key={lead.id} className="hover:bg-slate-50 transition-colors group">
                                     <td className="px-6 py-4">
                                         <div className="font-bold text-slate-900">{lead.business_name}</div>
-                                        <div className="text-xs text-slate-400">{lead.niche || 'Unknown'}</div>
+                                        <div className="text-xs text-slate-400 flex items-center gap-1">
+                                            <span className="text-emerald-500">◉</span> {lead.address?.split(',')[0] || lead.niche || 'Unknown'}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="text-slate-600 font-mono">{lead.phone || '-'}</div>
@@ -133,14 +135,28 @@ export default function LeadsPage() {
                                         {statusBadge(lead.status)}
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-green-600">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-slate-400 hover:text-green-600 hover:bg-green-50"
+                                                onClick={() => lead.phone && (window.location.href = `tel:${lead.phone}`)}
+                                            >
                                                 <Phone className="h-4 w-4" />
                                             </Button>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
+                                                onClick={() => lead.email && (window.location.href = `mailto:${lead.email}`)}
+                                            >
                                                 <Mail className="h-4 w-4" />
                                             </Button>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-900">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-slate-400 hover:text-slate-900 hover:bg-slate-100"
+                                            >
                                                 <MoreHorizontal className="h-4 w-4" />
                                             </Button>
                                         </div>
