@@ -10,6 +10,7 @@
     "agent:swarm": "npx tsx --env-file=.env.local src/agents/swarm/index.ts"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-progress": "^1.1.8",
     "@radix-ui/react-scroll-area": "^1.2.10",
@@ -26,11 +27,13 @@
     "next": "16.1.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-hook-form": "^7.71.1",
     "resend": "^6.8.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
-    "twilio": "^5.11.2"
+    "twilio": "^5.11.2",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@types/node": "^20",
