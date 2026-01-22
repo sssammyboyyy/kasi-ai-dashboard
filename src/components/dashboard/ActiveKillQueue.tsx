@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, X, Flame, Inbox } from "lucide-react";
+import { Check, X, Flame, Inbox, Phone, MessageCircle, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,13 +13,13 @@ export function ActiveKillQueue() {
     const [loading, setLoading] = useState(true);
     const supabase = createClient();
 
-    // Fetch leads that need approval (simulated 'needs_approval' logic using score > 80 and status is null)
+    // Fetch leads that are 'new' and high score
     useEffect(() => {
         const fetchQueue = async () => {
             const { data } = await supabase
                 .from('leads')
                 .select('*')
-                .gte('score', 80)
+                .gte('score', 70) // Manual Hustle Threshold
                 .is('status', null)
                 .order('score', { ascending: false })
                 .limit(50);
@@ -30,13 +30,12 @@ export function ActiveKillQueue() {
 
         fetchQueue();
 
-        // Subscription for new high-value leads
         const channel = supabase.channel('kill-queue')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, (payload) => {
                 const newLead = payload.new;
-                if (newLead.score >= 80) {
+                if (newLead.score >= 70) {
                     setQueue(prev => [newLead, ...prev]);
-                    toast.info("New High-Value Target in Queue!");
+                    toast.info("New Hot Lead in Queue!");
                 }
             })
             .subscribe();
@@ -44,17 +43,30 @@ export function ActiveKillQueue() {
         return () => { supabase.removeChannel(channel); };
     }, []);
 
-    const handleAction = async (id: string, action: 'approve' | 'discard') => {
-        // Optimistic UI
-        setQueue(prev => prev.filter(l => l.id !== id));
+    const handleSalesAction = async (lead: any, channel: 'whatsapp' | 'call' | 'discard') => {
+        // Optimistic Remove for flow
+        setQueue(prev => prev.filter(l => l.id !== lead.id));
 
-        if (action === 'approve') {
-            toast.success("Lead Approved - Rainmaker Activated");
-            await supabase.from('leads').update({ status: 'approved' }).eq('id', id);
-        } else {
+        if (channel === 'discard') {
             toast("Lead Discarded");
-            await supabase.from('leads').update({ status: 'archived' }).eq('id', id);
+            await supabase.from('leads').update({ status: 'archived' }).eq('id', lead.id);
+            return;
         }
+
+        // 1. Construct the Pitch
+        toast.success(`Opening ${channel === 'whatsapp' ? 'WhatsApp' : 'Phone'}...`);
+
+        if (channel === 'whatsapp') {
+            const pitch = `Hi ${lead.business_name}, I saw your business on Google Maps. We help ${lead.niche || 'local'} businesses in ${lead.city || 'your area'} get more clients. Are you taking on new work?`;
+            const url = `https://wa.me/${lead.phone?.replace(/\s+/g, '')}?text=${encodeURIComponent(pitch)}`;
+            window.open(url, '_blank');
+        }
+        else if (channel === 'call') {
+            window.location.href = `tel:${lead.phone}`;
+        }
+
+        // 2. Update Database
+        await supabase.from('leads').update({ status: 'contacted' }).eq('id', lead.id);
     };
 
     return (
@@ -71,12 +83,12 @@ export function ActiveKillQueue() {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-0">
+            <div className="flex-1 overflow-y-auto p-0 scrollbar-thin">
                 {queue.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-amber-900/40 p-8 text-center">
                         <Inbox className="h-10 w-10 mb-2 opacity-50" />
-                        <p className="font-bold">Inbox Zero</p>
-                        <p className="text-xs">All targets processed.</p>
+                        <p className="font-bold">Hungry for Leads</p>
+                        <p className="text-xs">Run the scraper to fill the queue.</p>
                     </div>
                 ) : (
                     <div className="divide-y divide-amber-100">
@@ -84,30 +96,43 @@ export function ActiveKillQueue() {
                             <div key={lead.id} className="p-3 bg-white hover:bg-amber-50/50 transition-colors group">
                                 <div className="flex justify-between items-start mb-2">
                                     <h4 className="font-bold text-sm text-slate-900 line-clamp-1">{lead.business_name}</h4>
-                                    <Badge className="bg-amber-100 text-amber-800 border-0">{lead.score}</Badge>
+                                    <Badge className={`${lead.score >= 85 ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'} border-0`}>
+                                        {lead.score}
+                                    </Badge>
                                 </div>
 
-                                <div className="p-2 bg-slate-50 border border-slate-100 rounded mb-3">
-                                    <p className="text-xs text-slate-500 line-clamp-2 italic">
-                                        "Draft: Hi {lead.business_name}, I noticed your rating on Google Maps..."
-                                    </p>
+                                <div className="text-xs text-slate-500 mb-3 flex items-center gap-2">
+                                    <span>{lead.phone || "No Phone"}</span>
+                                    <span>•</span>
+                                    <span>{lead.address?.split(',')[0]}</span>
                                 </div>
 
-                                <div className="flex gap-2">
+                                <div className="grid grid-cols-4 gap-2">
                                     <Button
-                                        onClick={() => handleAction(lead.id, 'discard')}
+                                        onClick={() => handleSalesAction(lead, 'discard')}
                                         size="sm"
                                         variant="outline"
-                                        className="flex-1 h-8 border-slate-200 text-slate-500 hover:text-red-600 hover:bg-red-50 hover:border-red-200"
+                                        className="col-span-1 h-9 border-slate-200 text-slate-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200"
                                     >
                                         <X className="h-4 w-4" />
                                     </Button>
+
                                     <Button
-                                        onClick={() => handleAction(lead.id, 'approve')}
+                                        onClick={() => handleSalesAction(lead, 'call')}
+                                        disabled={!lead.phone}
                                         size="sm"
-                                        className="flex-1 h-8 bg-emerald-600 hover:bg-emerald-700 text-white border-0"
+                                        className="col-span-1 h-9 bg-blue-600 hover:bg-blue-700 text-white border-0"
                                     >
-                                        <Check className="h-4 w-4 mr-1" /> Approve
+                                        <Phone className="h-4 w-4" />
+                                    </Button>
+
+                                    <Button
+                                        onClick={() => handleSalesAction(lead, 'whatsapp')}
+                                        disabled={!lead.phone}
+                                        size="sm"
+                                        className="col-span-2 h-9 bg-green-600 hover:bg-green-700 text-white border-0 font-bold"
+                                    >
+                                        <MessageCircle className="h-4 w-4 mr-1.5" /> WhatsApp
                                     </Button>
                                 </div>
                             </div>

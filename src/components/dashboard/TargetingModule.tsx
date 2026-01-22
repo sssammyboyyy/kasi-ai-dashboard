@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Target, Terminal, Play, Pause, Power, Globe } from "lucide-react";
+import { Target, Terminal, Play, Pause, Power, Globe, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 interface TargetingModuleProps {
     logs: string[];
@@ -14,11 +15,24 @@ export function TargetingModule({ logs }: TargetingModuleProps) {
     const [city, setCity] = useState("Johannesburg");
     const [niche, setNiche] = useState("Logistics");
     const [active, setActive] = useState(false);
+    const [copied, setCopied] = useState(false);
     const bottomRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [logs]);
+
+    const handleDeploy = () => {
+        // Generate the command
+        const command = `node run-local-v2.js "${city}" "${niche}"`;
+        navigator.clipboard.writeText(command);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+
+        toast.success("Swarm Command Copied to Clipboard!");
+        toast.info("Open your local terminal and paste the command to start the scraper.");
+        setActive(true);
+    };
 
     return (
         <Card className="flex flex-col h-full border-slate-300 shadow-sm overflow-hidden bg-slate-900 border-0">
@@ -26,10 +40,10 @@ export function TargetingModule({ logs }: TargetingModuleProps) {
             <div className="bg-slate-950 p-4 border-b border-slate-800 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                     <Terminal className="h-4 w-4 text-emerald-500" />
-                    <span className="font-mono text-sm font-bold text-slate-200">SWARM_CONTROLLER</span>
+                    <span className="font-mono text-sm font-bold text-slate-200">SWARM_CONTROLLER_V2</span>
                 </div>
-                <Badge className={`${active ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                    {active ? 'ONLINE' : 'OFFLINE'}
+                <Badge className={`${active ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>
+                    {active ? 'DEPLOYED' : 'STANDBY'}
                 </Badge>
             </div>
 
@@ -66,7 +80,12 @@ export function TargetingModule({ logs }: TargetingModuleProps) {
 
             {/* Terminal Output */}
             <div className="flex-1 overflow-y-auto p-4 space-y-1.5 font-mono text-[11px] leading-relaxed scrollbar-none bg-slate-950">
-                {logs.length === 0 && <span className="text-slate-600">Waiting for command...</span>}
+                {logs.length === 0 && (
+                    <div className="text-slate-600 space-y-2">
+                        <p>{">"} System Online.</p>
+                        <p>{">"} Ready for command sequence.</p>
+                    </div>
+                )}
                 {logs.map((log, i) => (
                     <div key={i} className={`gap-2 ${log.includes("SUCCESS") || log.includes("New Target") ? "text-emerald-400" :
                             log.includes("EXTRACT") ? "text-blue-400" :
@@ -85,22 +104,22 @@ export function TargetingModule({ logs }: TargetingModuleProps) {
             {/* Footer Actions */}
             <div className="p-4 bg-slate-900 border-t border-slate-800">
                 <Button
-                    onClick={() => setActive(!active)}
-                    className={`w-full font-bold tracking-wide transition-all ${active
-                            ? "bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20"
-                            : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]"
-                        }`}
+                    onClick={handleDeploy}
+                    className="w-full font-bold tracking-wide bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all"
                 >
-                    {active ? (
+                    {copied ? (
                         <>
-                            <Pause className="mr-2 h-4 w-4" /> HALT OPERATION
+                            <Check className="mr-2 h-4 w-4" /> COMMAND COPIED
                         </>
                     ) : (
                         <>
-                            <Play className="mr-2 h-4 w-4" /> DEPLOY SWARM
+                            <Copy className="mr-2 h-4 w-4" /> COPY DEPLOY COMMAND
                         </>
                     )}
                 </Button>
+                <p className="text-[10px] text-slate-500 text-center mt-2">
+                    Paste this command into your local terminal to begin the harvest.
+                </p>
             </div>
         </Card>
     );
