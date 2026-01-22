@@ -113,7 +113,9 @@ export default function LeadsPage() {
                                     <td className="px-6 py-4">
                                         <div className="font-bold text-slate-900">{lead.business_name}</div>
                                         <div className="text-xs text-slate-400 flex items-center gap-1">
-                                            <span className="text-emerald-500">◉</span> {lead.address?.split(',')[0] || lead.niche || 'Unknown'}
+                                            <span className="text-emerald-500">◉</span> {
+                                                (lead.address && lead.address.split(',')[0]) ? lead.address.split(',')[0] : (lead.niche || 'Unknown')
+                                            }
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
