@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
+import { toast } from "sonner";
 import {
     Search,
     Filter,
@@ -34,8 +35,6 @@ interface Lead {
     source?: string;
 }
 
-
-// Demo data
 // Status match function to safely handle DB string types
 const getLeadStatus = (status: string): Lead["status"] => {
     const validStatuses = ["new", "contacted", "qualified", "converted", "lost"];
@@ -70,7 +69,6 @@ export default function LeadsPage() {
                 }
 
                 if (data) {
-                    console.log("DEBUG: Leads fetched from Supabase:", data);
                     const mappedLeads: Lead[] = data.map((l) => ({
                         ...l,
                         status: getLeadStatus(l.status),
@@ -87,7 +85,6 @@ export default function LeadsPage() {
 
         fetchLeads();
 
-        // Optional: Realtime subscription
         const channel = supabase
             .channel('leads-changes')
             .on(
@@ -107,6 +104,29 @@ export default function LeadsPage() {
             supabase.removeChannel(channel);
         };
     }, [supabase]);
+
+    const handleContact = async (lead: Lead, channel: 'whatsapp' | 'call' | 'email') => {
+        let url = '';
+        if (channel === 'whatsapp') {
+            const text = `Hello ${lead.business_name}, I saw your business on Google Maps and I have a free lead for you. Are you taking on new work?`;
+            url = `https://wa.me/${lead.phone}?text=${encodeURIComponent(text)}`;
+        } else if (channel === 'call') {
+            url = `tel:${lead.phone}`;
+        } else if (channel === 'email') {
+            url = `mailto:${lead.email}?subject=Free Lead for ${lead.business_name}&body=Hi there, I have a qualified lead for you.`;
+        }
+
+        if (url) window.open(url, channel === 'call' || channel === 'email' ? '_self' : '_blank');
+
+        // Optimistic Update
+        const newStatus = 'contacted';
+        setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: newStatus } : l));
+
+        // Database Update
+        await supabase.from('leads').update({ status: newStatus }).eq('id', lead.id);
+
+        toast.success(`Marked ${lead.business_name} as contacted via ${channel}`);
+    };
 
     const filteredLeads = leads.filter(lead =>
         lead.business_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -140,7 +160,10 @@ export default function LeadsPage() {
                         <Download className="h-4 w-4" />
                         Export
                     </Button>
-                    <Button className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                    <Button
+                        className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                        onClick={() => toast.info("Bulk Automation is coming in Phase 8 (Cloud). Use individual actions for Manual Hustle!")}
+                    >
                         <MessageSquare className="h-4 w-4" />
                         Bulk WhatsApp
                     </Button>
@@ -263,13 +286,25 @@ export default function LeadsPage() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-2">
-                                                    <button className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-green-50 hover:text-green-600">
+                                                    <button
+                                                        onClick={() => handleContact(lead, 'call')}
+                                                        className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-green-50 hover:text-green-600"
+                                                        title="Call"
+                                                    >
                                                         <Phone className="h-4 w-4" />
                                                     </button>
-                                                    <button className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600">
+                                                    <button
+                                                        onClick={() => handleContact(lead, 'email')}
+                                                        className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                                                        title="Email"
+                                                    >
                                                         <Mail className="h-4 w-4" />
                                                     </button>
-                                                    <button className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-green-50 hover:text-green-600">
+                                                    <button
+                                                        onClick={() => handleContact(lead, 'whatsapp')}
+                                                        className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-green-50 hover:text-green-600"
+                                                        title="WhatsApp"
+                                                    >
                                                         <MessageSquare className="h-4 w-4" />
                                                     </button>
                                                     <button className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100">

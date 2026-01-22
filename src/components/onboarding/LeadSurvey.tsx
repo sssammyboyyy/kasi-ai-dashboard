@@ -273,7 +273,8 @@ const questions = [
             "A friend referred me",
             "LinkedIn",
             "Other"
-        ]
+        ],
+        customIcon: "/icon_growth_chart.png"
     },
     {
         id: "readyToStart",
@@ -311,64 +312,48 @@ export function LeadSurvey() {
     const progress = ((currentQuestion + 1) / questions.length) * 100;
     const supabase = createClient();
 
-    // Submit form data to Formspree and Supabase
+    // Submit form data to Backend API (Supabase + Notifications)
     const submitForm = async (formData: SurveyData) => {
         setIsSubmitting(true);
         const timestamp = new Date().toISOString();
 
-        // 1. Submit to Supabase (Priority)
         try {
-            const { error } = await supabase
-                .from('leads')
-                .insert([
-                    {
-                        full_name: formData.yourName,
-                        email: formData.email,
-                        venue_name: formData.businessName,
-                        pain_point: formData.biggestChallenge,
-                        notes: JSON.stringify({
-                            business_type: formData.businessType,
-                            lead_source: formData.currentLeadSource,
-                            monthly_budget: formData.monthlyBudget,
-                            contracts_goal: formData.monthlyContractsGoal,
-                            ideal_client: formData.idealClientType,
-                            location: formData.location,
-                            whatsapp_number: formData.whatsappNumber,
-                            preferred_contact: formData.preferredContact,
-                            timeline: formData.timeline,
-                            referral_source: formData.heardAboutUs,
-                            ready_to_start: formData.readyToStart
-                        }),
-                        status: 'new'
-                    }
-                ]);
-
-            if (error) {
-                console.error('Supabase submission error:', error);
-                // Fallback handled by Formspree below
-            } else {
-                console.log('Supabase submission successful');
-            }
-        } catch (err) {
-            console.error('Supabase unexpected error:', err);
-        }
-
-        // 2. Submit to Formspree (Backup & Notification)
-        try {
-            const response = await fetch(config.formspree.getEndpoint(), {
+            // 1. Send to Kasi AI Backend
+            const response = await fetch('/api/signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...formData,
-                    submittedAt: timestamp,
-                    source: 'lead_survey'
-                }),
+                body: JSON.stringify(formData)
             });
-            if (response.ok) {
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                console.error('Backend submission error:', result.error);
+                // We can choose to show an error or just proceed explicitly
+                if (response.status === 409) {
+                    // User already exists
+                    console.log('User already exists');
+                }
+            } else {
+                console.log('Backend submission successful', result);
                 analytics.surveyCompleted(formData.businessName);
             }
+
+            // 2. Fallback / Analytics via Formspree (Optional, kept for redundancy)
+            if (config.formspree?.getEndpoint) {
+                await fetch(config.formspree.getEndpoint(), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ...formData,
+                        submittedAt: timestamp,
+                        source: 'lead_survey_v2'
+                    }),
+                });
+            }
+
         } catch (error) {
-            console.error('Form submission error:', error);
+            console.error('Form submission unexpected error:', error);
         } finally {
             setIsSubmitting(false);
         }
